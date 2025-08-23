@@ -59,7 +59,7 @@ export interface InvoiceData {
 
 class ApiService {
   private api: AxiosInstance;
-  private baseURL: string = 'http://10.0.2.2:8080'; // IP para emulador Android
+  private baseURL: string = 'https://luma.app.br'; // Domínio do BFF via Cloudflare Tunnel
 
   constructor() {
     this.api = axios.create({
