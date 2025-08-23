@@ -5,9 +5,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: LoginData | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (cpf: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, passwordRepeat: string) => Promise<void>;
+  register: (email: string, cpf: string, password: string, passwordRepeat: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string, newPasswordRepeat: string) => Promise<void>;
 }
@@ -50,9 +50,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (cpf: string, password: string) => {
     try {
-      const response = await apiService.login({ email, password });
+      const response = await apiService.login({ email: cpf, password }); // Usa CPF como email
       if (response.success && response.data) {
         setUser(response.data);
         setIsAuthenticated(true);
@@ -77,18 +77,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, passwordRepeat: string) => {
+  const register = async (email: string, cpf: string, password: string, passwordRepeat: string) => {
     try {
+      console.log('DEBUG: AuthContext register called with:', { email, cpf, password, passwordRepeat });
+      
+      // Remove formatação do CPF (pontos e hífens)
+      const cleanCpf = cpf.replace(/\D/g, '');
+      
       const response = await apiService.createWallet({
-        email,
+        username: cleanCpf, // Envia apenas o CPF limpo
         password,
         password_repeat: passwordRepeat,
       });
+      
+      console.log('DEBUG: AuthContext register response:', response);
       
       if (!response.success) {
         throw new Error(response.message || 'Erro no cadastro');
       }
     } catch (error: any) {
+      console.log('DEBUG: AuthContext register error:', error);
       throw new Error(error.message || 'Erro no cadastro');
     }
   };

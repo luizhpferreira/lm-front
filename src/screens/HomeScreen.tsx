@@ -135,7 +135,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Informações da Conta</Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email:</Text>
+            <Text style={styles.infoLabel}>CPF:</Text>
+            <Text style={styles.infoValue}>{user?.username || 'N/A'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>CPF:</Text>
             <Text style={styles.infoValue}>{user?.email}</Text>
           </View>
           <View style={styles.infoRow}>

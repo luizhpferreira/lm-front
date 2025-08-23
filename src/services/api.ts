@@ -3,9 +3,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Tipos de dados
 export interface CreateWalletRequest {
-  email: string;
+  username: string; // CPF do usuário
   password: string;
   password_repeat: string;
+}
+
+export interface CpfCheckRequest {
+  user: string;
+}
+
+export interface CpfCheckResponse {
+  available: boolean;
+  message: string;
 }
 
 export interface LoginRequest {
@@ -26,6 +35,7 @@ export interface ResetPasswordRequest {
 export interface CreateInvoiceRequest {
   amount: number;
   memo: string;
+  // wallet_id será preenchido automaticamente pelo backend
 }
 
 export interface ApiResponse<T = any> {
@@ -46,6 +56,7 @@ export interface WalletData {
 export interface LoginData {
   wallet_id: string;
   email: string;
+  username: string; // CPF do usuário
   token: string;
   message: string;
 }
@@ -59,7 +70,7 @@ export interface InvoiceData {
 
 class ApiService {
   private api: AxiosInstance;
-  private baseURL: string = 'https://luma.app.br'; // Domínio do BFF via Cloudflare Tunnel
+  private baseURL: string = 'http://10.0.2.2:8080'; // IP do emulador para acessar localhost
 
   constructor() {
     this.api = axios.create({
@@ -111,9 +122,12 @@ class ApiService {
   // Criar carteira (cadastro)
   async createWallet(data: CreateWalletRequest): Promise<ApiResponse<{ wallet_id: string; email: string; message: string }>> {
     try {
+      console.log('DEBUG: ApiService createWallet called with:', data);
       const response: AxiosResponse<ApiResponse> = await this.api.post('/api/v1/wallets', data);
+      console.log('DEBUG: ApiService createWallet response:', response.data);
       return response.data;
     } catch (error: any) {
+      console.log('DEBUG: ApiService createWallet error:', error);
       throw this.handleError(error);
     }
   }
@@ -194,6 +208,16 @@ class ApiService {
   async checkPaymentStatus(paymentHash: string): Promise<ApiResponse<any>> {
     try {
       const response: AxiosResponse<ApiResponse> = await this.api.get(`/api/v1/payments/status?payment_hash=${paymentHash}`);
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Verificar disponibilidade de CPF
+  async checkCpf(cpf: string): Promise<ApiResponse<CpfCheckResponse>> {
+    try {
+      const response: AxiosResponse<ApiResponse<CpfCheckResponse>> = await this.api.post('/api/v1/check-cpf', { user: cpf });
       return response.data;
     } catch (error: any) {
       throw this.handleError(error);

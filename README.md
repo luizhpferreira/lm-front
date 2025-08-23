@@ -5,8 +5,9 @@ Um aplicativo mobile React Native/Expo que se comunica com o BFF Luma para geren
 ## 🚀 Funcionalidades
 
 ### ✅ Autenticação
-- **Login**: Autenticação com email e senha
-- **Cadastro**: Criação de nova carteira com validação de senha forte
+- **Login**: Autenticação com CPF e senha
+- **Cadastro**: Criação de nova carteira com CPF como identificador principal
+- **Sistema de CPF**: Validação completa de CPF + formatação automática
 - **Recuperação de Senha**: Solicitação de reset via email
 - **Logout**: Encerramento seguro da sessão
 
@@ -55,8 +56,8 @@ npm start
 O app se comunica com os seguintes endpoints do BFF:
 
 ### Autenticação
-- `POST /api/v1/wallets` - Criar carteira (cadastro)
-- `POST /api/v1/login` - Login
+- `POST /api/v1/wallets` - Criar carteira (cadastro com CPF, password, password_repeat)
+- `POST /api/v1/login` - Login com CPF e password
 - `POST /api/v1/refresh` - Refresh token
 - `POST /api/v1/forgot-password` - Esqueci a senha
 - `POST /api/v1/reset-password` - Reset de senha
@@ -97,12 +98,14 @@ O app utiliza um design moderno e limpo com:
 ### 1. Primeiro Acesso
 1. Abra o app
 2. Toque em "Criar nova conta"
-3. Preencha email e senha (siga as validações)
-4. Confirme a senha
-5. Toque em "Criar Conta"
+3. Digite seu email (opcional, para futuras funcionalidades)
+4. Digite seu CPF (será usado como identificador principal)
+5. Digite uma senha forte (siga as validações)
+6. Confirme a senha
+7. Toque em "Criar Conta"
 
 ### 2. Login
-1. Digite seu email e senha
+1. Digite seu CPF e senha
 2. Toque em "Entrar"
 
 ### 3. Dashboard Principal

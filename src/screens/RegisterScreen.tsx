@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../services/api';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -18,10 +19,61 @@ interface RegisterScreenProps {
 
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
   const [passwordRepeat, setPasswordRepeat] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
+
+  // Função para validar CPF
+  const validateCpf = (cpf: string): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    // Remove caracteres não numéricos
+    const cleanCpf = cpf.replace(/\D/g, '');
+    
+    if (cleanCpf.length !== 11) {
+      errors.push('CPF deve ter 11 dígitos');
+      return { isValid: false, errors };
+    }
+    
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1{10}$/.test(cleanCpf)) {
+      errors.push('CPF inválido');
+      return { isValid: false, errors };
+    }
+    
+    // Validação dos dígitos verificadores
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(cleanCpf.charAt(i)) * (10 - i);
+    }
+    let remainder = (sum * 10) % 11;
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    if (remainder !== parseInt(cleanCpf.charAt(9))) {
+      errors.push('CPF inválido');
+      return { isValid: false, errors };
+    }
+    
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(cleanCpf.charAt(i)) * (11 - i);
+    }
+    remainder = (sum * 10) % 11;
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    if (remainder !== parseInt(cleanCpf.charAt(10))) {
+      errors.push('CPF inválido');
+      return { isValid: false, errors };
+    }
+    
+    return { isValid: true, errors: [] };
+  };
+
+  // Função para formatar CPF
+  const formatCpf = (value: string): string => {
+    const cleanValue = value.replace(/\D/g, '');
+    return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
 
   const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
@@ -65,31 +117,48 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   };
 
   const handleRegister = async () => {
-    if (!email || !password || !passwordRepeat) {
+    console.log('DEBUG: handleRegister called');
+    console.log('DEBUG: Current state:', { email, cpf, password, passwordRepeat });
+    
+    if (!email || !cpf || !password || !passwordRepeat) {
+      console.log('DEBUG: Missing required fields');
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
     }
 
+    // Valida CPF
+    const cpfValidation = validateCpf(cpf);
+    if (!cpfValidation.isValid) {
+      console.log('DEBUG: CPF validation failed:', cpfValidation.errors);
+      Alert.alert('CPF Inválido', cpfValidation.errors.join('\n'));
+      return;
+    }
+
     if (password !== passwordRepeat) {
+      console.log('DEBUG: Passwords do not match');
       Alert.alert('Erro', 'As senhas não coincidem');
       return;
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
+      console.log('DEBUG: Password validation failed:', passwordValidation.errors);
       Alert.alert('Senha Inválida', passwordValidation.errors.join('\n'));
       return;
     }
 
     setLoading(true);
     try {
-      await register(email, password, passwordRepeat);
+      const cleanCpf = cpf.replace(/\D/g, '');
+      console.log('DEBUG: Calling register with:', { email, cpf: cleanCpf, password, passwordRepeat });
+      await register(email, cleanCpf, password, passwordRepeat);
       Alert.alert(
         'Sucesso',
-        'Conta criada com sucesso! Faça login para continuar.',
+        `Conta criada com sucesso!\nCPF: ${cpf}\nUse seu CPF para fazer login.`,
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error: any) {
+      console.log('DEBUG: Register error:', error);
       Alert.alert('Erro no Cadastro', error.message);
     } finally {
       setLoading(false);
@@ -131,6 +200,21 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>CPF</Text>
+            <TextInput
+              style={styles.input}
+              value={cpf}
+              onChangeText={(text) => {
+                const formatted = formatCpf(text);
+                setCpf(formatted);
+              }}
+              placeholder="000.000.000-00"
+              keyboardType="numeric"
+              maxLength={14}
             />
           </View>
 
@@ -266,11 +350,25 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: '#e74c3c',
   },
+  inputSuccess: {
+    borderColor: '#27ae60',
+  },
   errorText: {
     color: '#e74c3c',
     fontSize: 12,
     marginTop: 4,
   },
+  successText: {
+    color: '#27ae60',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  infoText: {
+    color: '#3498db',
+    fontSize: 12,
+    marginTop: 4,
+  },
+
   passwordStrength: {
     flexDirection: 'row',
     alignItems: 'center',

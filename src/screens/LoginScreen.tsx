@@ -17,20 +17,28 @@ interface LoginScreenProps {
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
+  // Função para formatar CPF
+  const formatCpf = (value: string): string => {
+    const cleanValue = value.replace(/\D/g, '');
+    return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!cpf || !password) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
     }
 
     setLoading(true);
     try {
-      await login(email, password);
+      // Remove formatação do CPF para enviar ao backend
+      const cleanCpf = cpf.replace(/\D/g, '');
+      await login(cleanCpf, password);
       // Navegação será feita automaticamente pelo AuthContext
     } catch (error: any) {
       Alert.alert('Erro no Login', error.message);
@@ -52,15 +60,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>CPF</Text>
             <TextInput
               style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Digite seu email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
+              value={cpf}
+              onChangeText={(text) => {
+                const formatted = formatCpf(text);
+                setCpf(formatted);
+              }}
+              placeholder="000.000.000-00"
+              keyboardType="numeric"
+              maxLength={14}
             />
           </View>
 
