@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Tipos de dados
 export interface CreateWalletRequest {
   username: string; // CPF do usuário
+  email: string;    // Email do usuário
   password: string;
   password_repeat: string;
 }

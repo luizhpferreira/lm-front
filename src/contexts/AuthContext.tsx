@@ -85,7 +85,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const cleanCpf = cpf.replace(/\D/g, '');
       
       const response = await apiService.createWallet({
-        username: cleanCpf, // Envia apenas o CPF limpo
+        username: cleanCpf, // CPF limpo
+        email,              // Email do usuário
         password,
         password_repeat: passwordRepeat,
       });
