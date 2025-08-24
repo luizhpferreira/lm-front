@@ -19,8 +19,7 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { user, logout } = useAuth();
-  const [walletInfo, setWalletInfo] = useState<WalletData | null>(null);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
@@ -28,51 +27,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [invoiceMemo, setInvoiceMemo] = useState('');
   const [createdInvoice, setCreatedInvoice] = useState<InvoiceData | null>(null);
 
-  useEffect(() => {
-    loadWalletInfo();
-  }, []);
-
-  const loadWalletInfo = async () => {
-    setLoading(true);
-    try {
-      const response = await apiService.getWalletInfo();
-      if (response.success && response.data) {
-        setWalletInfo(response.data);
-      }
-    } catch (error: any) {
-      Alert.alert('Erro', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadWalletInfo();
+    // Refresh functionality can be added here if needed
     setRefreshing(false);
   };
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout();
-            } catch (error) {
-              console.error('Erro no logout:', error);
-              Alert.alert('Erro', 'Erro ao fazer logout');
-            }
-          },
-        },
-      ]
-    );
-  };
+
 
   const handleCreateInvoice = async () => {
     if (!invoiceAmount || !invoiceMemo) {
@@ -107,15 +68,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+
 
   return (
     <View style={styles.container}>
@@ -128,8 +81,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
           <Text style={styles.headerTitle}>BFF Luma</Text>
         </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Sair</Text>
+        <TouchableOpacity 
+          style={styles.preferencesButton} 
+          onPress={() => navigation.navigate('Preferences')}
+        >
+          <Text style={styles.preferencesText}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
@@ -139,41 +95,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Informações do Usuário */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Informações da Conta</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>CPF:</Text>
-            <Text style={styles.infoValue}>{user?.username || 'N/A'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>CPF:</Text>
-            <Text style={styles.infoValue}>{user?.email}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Wallet ID:</Text>
-            <Text style={styles.infoValue}>{user?.wallet_id}</Text>
-          </View>
-        </View>
 
-        {/* Informações da Carteira */}
-        {walletInfo && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Informações da Carteira</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>ID:</Text>
-              <Text style={styles.infoValue}>{walletInfo.id}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Criada em:</Text>
-              <Text style={styles.infoValue}>{formatDate(walletInfo.created_at)}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Atualizada em:</Text>
-              <Text style={styles.infoValue}>{formatDate(walletInfo.updated_at)}</Text>
-            </View>
-          </View>
-        )}
 
         {/* Ações */}
         <View style={styles.card}>
@@ -328,14 +250,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.primary,
   },
-  logoutButton: {
+  preferencesButton: {
     padding: spacing.sm,
     borderRadius: spacing.borderRadius.sm,
-    backgroundColor: colors.error.light,
+    backgroundColor: colors.background.tertiary,
   },
-  logoutText: {
-    color: colors.error.main,
-    fontSize: 16,
+  preferencesText: {
+    fontSize: 20,
     fontWeight: '600',
   },
   content: {
