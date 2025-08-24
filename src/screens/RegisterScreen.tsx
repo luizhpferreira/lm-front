@@ -155,7 +155,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       await register(email, cleanCpf, password, passwordRepeat);
       Alert.alert(
         'Sucesso',
-        `Conta criada com sucesso!\nCPF: ${cpf}\nUse seu CPF para fazer login.`,
+        `Conta criada com sucesso!\nCPF: ${cpf}\n\n📧 Enviamos um email de confirmação para ${email}.\n\nPor favor, confirme seu email antes de fazer login.\n\nApós a confirmação, você receberá um email de boas-vindas.`,
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error: any) {

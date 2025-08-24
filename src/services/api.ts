@@ -185,6 +185,16 @@ class ApiService {
     }
   }
 
+  // Confirmar email
+  async confirmEmail(token: string): Promise<ApiResponse<{ message: string; email: string }>> {
+    try {
+      const response: AxiosResponse<ApiResponse> = await this.api.post('/api/v1/confirm-email', { token });
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
   // Obter informações da carteira
   async getWalletInfo(): Promise<ApiResponse<WalletData>> {
     try {
