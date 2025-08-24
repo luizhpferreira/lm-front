@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
+import { colors, spacing, typography } from '../theme';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -185,6 +186,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>⚡</Text>
+            </View>
+          </View>
           <Text style={styles.title}>Criar Conta</Text>
           <Text style={styles.subtitle}>Crie sua carteira Lightning</Text>
         </View>
@@ -274,6 +280,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleRegister}
             disabled={loading}
+            activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>
               {loading ? 'Criando conta...' : 'Criar Conta'}
@@ -295,80 +302,106 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.primary,
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.screenPadding,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: spacing.xl,
+  },
+  logoContainer: {
+    marginBottom: spacing.md,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.gradients.primary[0],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoText: {
+    fontSize: 40,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 8,
+    fontWeight: '700',
+    lineHeight: 38,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: 16,
-    color: '#7f8c8d',
+    fontWeight: '400',
+    lineHeight: 24,
+    color: colors.text.secondary,
     textAlign: 'center',
   },
   form: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: '#000',
+    backgroundColor: colors.background.secondary,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.cardPadding,
+    shadowColor: colors.shadow.medium,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 8,
+    lineHeight: 20,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e1e8ed',
-    borderRadius: 8,
-    padding: 16,
+    borderColor: colors.border.light,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.inputPadding,
     fontSize: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.tertiary,
+    color: colors.text.primary,
   },
   inputError: {
-    borderColor: '#e74c3c',
+    borderColor: colors.error.main,
   },
   inputSuccess: {
-    borderColor: '#27ae60',
+    borderColor: colors.success.main,
   },
   errorText: {
-    color: '#e74c3c',
+    color: colors.error.main,
     fontSize: 12,
     marginTop: 4,
   },
   successText: {
-    color: '#27ae60',
+    color: colors.success.main,
     fontSize: 12,
     marginTop: 4,
   },
   infoText: {
-    color: '#3498db',
+    color: colors.info.main,
     fontSize: 12,
     marginTop: 4,
   },
-
   passwordStrength: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -390,25 +423,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   button: {
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: colors.primary.main,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.buttonPadding,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   buttonDisabled: {
-    backgroundColor: '#bdc3c7',
+    backgroundColor: colors.neutral[400],
+    opacity: 0.6,
   },
   buttonText: {
-    color: 'white',
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: '600',
+    lineHeight: 20,
   },
   linkButton: {
     alignItems: 'center',
   },
   linkText: {
-    color: '#3498db',
+    color: colors.primary.main,
     fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
   },
 });

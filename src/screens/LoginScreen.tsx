@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -11,6 +10,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { colors, spacing, typography } from '../theme';
+import { Button, Input, Card } from '../components';
 
 interface LoginScreenProps {
   navigation: any;
@@ -54,47 +55,44 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>BFF Luma</Text>
+          <View style={styles.logoContainer}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>⚡</Text>
+            </View>
+          </View>
+          <Text style={styles.title}>Luma App</Text>
           <Text style={styles.subtitle}>Faça login na sua carteira Lightning</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>CPF</Text>
-            <TextInput
-              style={styles.input}
-              value={cpf}
-              onChangeText={(text) => {
-                const formatted = formatCpf(text);
-                setCpf(formatted);
-              }}
-              placeholder="000.000.000-00"
-              keyboardType="numeric"
-              maxLength={14}
-            />
-          </View>
+        <Card variant="elevated">
+          <Input
+            label="CPF"
+            value={cpf}
+            onChangeText={(text: string) => {
+              const formatted = formatCpf(text);
+              setCpf(formatted);
+            }}
+            placeholder="000.000.000-00"
+            keyboardType="numeric"
+            maxLength={14}
+          />
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Senha</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Digite sua senha"
-              secureTextEntry
-              autoCapitalize="none"
-            />
-          </View>
+          <Input
+            label="Senha"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Digite sua senha"
+            secureTextEntry
+            autoCapitalize="none"
+          />
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <Button
+            title={loading ? 'Entrando...' : 'Entrar'}
             onPress={handleLogin}
             disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Entrando...' : 'Entrar'}
-            </Text>
-          </TouchableOpacity>
+            loading={loading}
+            style={{ marginBottom: spacing.md }}
+          />
 
           <TouchableOpacity
             style={styles.linkButton}
@@ -109,13 +107,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity
-            style={styles.secondaryButton}
+          <Button
+            title="Criar nova conta"
             onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={styles.secondaryButtonText}>Criar nova conta</Text>
-          </TouchableOpacity>
-        </View>
+            variant="outline"
+          />
+        </Card>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -124,106 +121,80 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.primary,
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.screenPadding,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: spacing.xl,
+  },
+  logoContainer: {
+    marginBottom: spacing.md,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.gradients.primary[0],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoText: {
+    fontSize: 40,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 8,
+    fontWeight: '700',
+    lineHeight: 38,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: 16,
-    color: '#7f8c8d',
+    fontWeight: '400',
+    lineHeight: 24,
+    color: colors.text.secondary,
     textAlign: 'center',
   },
-  form: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e1e8ed',
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#f8f9fa',
-  },
-  button: {
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonDisabled: {
-    backgroundColor: '#bdc3c7',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
   linkButton: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   linkText: {
-    color: '#3498db',
     fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+    color: colors.primary.main,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e1e8ed',
+    backgroundColor: colors.border.light,
   },
   dividerText: {
-    marginHorizontal: 16,
-    color: '#7f8c8d',
+    marginHorizontal: spacing.md,
     fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 20,
+    color: colors.text.tertiary,
   },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: '#3498db',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#3498db',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
 });

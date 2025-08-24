@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService, WalletData, InvoiceData } from '../services/api';
+import { colors, spacing, typography } from '../theme';
 
 interface HomeScreenProps {
   navigation: any;
@@ -119,7 +120,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>BFF Luma</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.logoContainer}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>⚡</Text>
+            </View>
+          </View>
+          <Text style={styles.headerTitle}>BFF Luma</Text>
+        </View>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Sair</Text>
         </TouchableOpacity>
@@ -172,18 +180,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <Text style={styles.cardTitle}>Ações</Text>
           
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, styles.primaryAction]}
             onPress={() => setShowCreateInvoice(true)}
             disabled={loading}
+            activeOpacity={0.8}
           >
             <Text style={styles.actionButtonText}>Criar Invoice</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, styles.secondaryAction]}
             onPress={() => navigation.navigate('PaymentStatus')}
+            activeOpacity={0.8}
           >
-            <Text style={styles.actionButtonText}>Verificar Pagamento</Text>
+            <Text style={[styles.actionButtonText, styles.secondaryActionText]}>Verificar Pagamento</Text>
           </TouchableOpacity>
         </View>
 
@@ -276,83 +286,121 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.primary,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'white',
+    padding: spacing.screenPadding,
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  logoutButton: {
-    padding: 8,
-  },
-  logoutText: {
-    color: '#e74c3c',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
+    borderBottomColor: colors.border.light,
+    shadowColor: colors.shadow.light,
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    marginRight: spacing.sm,
+  },
+  logoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.gradients.primary[0],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoText: {
+    fontSize: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  logoutButton: {
+    padding: spacing.sm,
+    borderRadius: spacing.borderRadius.sm,
+    backgroundColor: colors.error.light,
+  },
+  logoutText: {
+    color: colors.error.main,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+    padding: spacing.screenPadding,
+  },
+  card: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.cardPadding,
+    marginBottom: spacing.md,
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 16,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   infoLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#7f8c8d',
+    color: colors.text.secondary,
     flex: 1,
   },
   infoValue: {
     fontSize: 14,
-    color: '#2c3e50',
+    color: colors.text.primary,
     flex: 2,
     textAlign: 'right',
   },
   actionButton: {
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.buttonPadding,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.sm,
+  },
+  primaryAction: {
+    backgroundColor: colors.primary.main,
+  },
+  secondaryAction: {
+    backgroundColor: colors.background.tertiary,
+    borderWidth: 2,
+    borderColor: colors.primary.main,
   },
   actionButtonText: {
-    color: 'white',
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: '600',
+  },
+  secondaryActionText: {
+    color: colors.primary.main,
   },
   modalOverlay: {
     flex: 1,
@@ -361,64 +409,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
+    backgroundColor: colors.background.secondary,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.cardPadding,
     width: '90%',
     maxWidth: 400,
+    shadowColor: colors.shadow.dark,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 20,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 8,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e1e8ed',
-    borderRadius: 8,
-    padding: 16,
+    borderColor: colors.border.light,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.inputPadding,
     fontSize: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.tertiary,
+    color: colors.text.primary,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: spacing.lg,
   },
   modalButton: {
     flex: 1,
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.buttonPadding,
     alignItems: 'center',
-    marginHorizontal: 8,
+    marginHorizontal: spacing.sm,
   },
   cancelButton: {
-    backgroundColor: '#e1e8ed',
+    backgroundColor: colors.neutral[200],
   },
   confirmButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: colors.primary.main,
   },
   buttonDisabled: {
-    backgroundColor: '#bdc3c7',
+    backgroundColor: colors.neutral[400],
+    opacity: 0.6,
   },
   cancelButtonText: {
-    color: '#7f8c8d',
+    color: colors.text.secondary,
     fontSize: 16,
     fontWeight: '600',
   },
   confirmButtonText: {
-    color: 'white',
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },
