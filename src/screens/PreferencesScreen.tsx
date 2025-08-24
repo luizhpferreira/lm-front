@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { apiService, WalletData } from '../services/api';
 import { colors, spacing, typography } from '../theme';
+import { ResponsiveContainer, ResponsiveCard } from '../components';
 
 interface PreferencesScreenProps {
   navigation: any;
@@ -83,86 +84,88 @@ export const PreferencesScreen: React.FC<PreferencesScreenProps> = ({ navigation
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* Informações da Conta */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Informações da Conta</Text>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>CPF:</Text>
-            <Text style={styles.infoValue}>{user?.username || 'N/A'}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{user?.email}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Wallet ID:</Text>
-            <Text style={styles.infoValue}>{user?.wallet_id}</Text>
-          </View>
-        </View>
-
-        {/* Informações da Carteira */}
-        {walletInfo && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Informações da Carteira</Text>
+      <ResponsiveContainer>
+        <ScrollView style={styles.content}>
+          {/* Informações da Conta */}
+          <ResponsiveCard>
+            <Text style={styles.cardTitle}>Informações da Conta</Text>
             
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>ID:</Text>
-              <Text style={styles.infoValue}>{walletInfo.id}</Text>
+              <Text style={styles.infoLabel}>CPF:</Text>
+              <Text style={styles.infoValue}>{user?.username || 'N/A'}</Text>
             </View>
             
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Criada em:</Text>
-              <Text style={styles.infoValue}>{formatDate(walletInfo.created_at)}</Text>
+              <Text style={styles.infoLabel}>Email:</Text>
+              <Text style={styles.infoValue}>{user?.email}</Text>
             </View>
             
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Atualizada em:</Text>
-              <Text style={styles.infoValue}>{formatDate(walletInfo.updated_at)}</Text>
+              <Text style={styles.infoLabel}>Wallet ID:</Text>
+              <Text style={styles.infoValue}>{user?.wallet_id}</Text>
             </View>
-          </View>
-        )}
+          </ResponsiveCard>
 
-        {/* Sobre */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Sobre</Text>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Versão do App</Text>
-            <Text style={styles.infoValue}>1.0.0</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Desenvolvido por</Text>
-            <Text style={styles.infoValue}>BFF Luma</Text>
-          </View>
-        </View>
-
-        {/* Encerrar Sessão - Última opção */}
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.logoutItem}
-            onPress={handleLogout}
-            activeOpacity={0.7}
-          >
-            <View style={styles.logoutContent}>
-              <View style={styles.logoutIcon}>
-                <Text style={styles.logoutIconText}>🚪</Text>
+          {/* Informações da Carteira */}
+          {walletInfo && (
+            <ResponsiveCard>
+              <Text style={styles.cardTitle}>Informações da Carteira</Text>
+              
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>ID:</Text>
+                <Text style={styles.infoValue}>{walletInfo.id}</Text>
               </View>
-              <View style={styles.logoutText}>
-                <Text style={styles.logoutTitle}>Encerrar Sessão</Text>
-                <Text style={styles.logoutDescription}>
-                  Sair da sua conta atual
-                </Text>
+              
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Criada em:</Text>
+                <Text style={styles.infoValue}>{formatDate(walletInfo.created_at)}</Text>
               </View>
+              
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Atualizada em:</Text>
+                <Text style={styles.infoValue}>{formatDate(walletInfo.updated_at)}</Text>
+              </View>
+            </ResponsiveCard>
+          )}
+
+          {/* Sobre */}
+          <ResponsiveCard>
+            <Text style={styles.cardTitle}>Sobre</Text>
+            
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Versão do App</Text>
+              <Text style={styles.infoValue}>1.0.0</Text>
             </View>
-            <Text style={styles.arrowText}>›</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Desenvolvido por</Text>
+              <Text style={styles.infoValue}>BFF Luma</Text>
+            </View>
+          </ResponsiveCard>
+
+          {/* Encerrar Sessão - Última opção */}
+          <ResponsiveCard>
+            <TouchableOpacity
+              style={styles.logoutItem}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <View style={styles.logoutContent}>
+                <View style={styles.logoutIcon}>
+                  <Text style={styles.logoutIconText}>🚪</Text>
+                </View>
+                <View style={styles.logoutText}>
+                  <Text style={styles.logoutTitle}>Encerrar Sessão</Text>
+                  <Text style={styles.logoutDescription}>
+                    Sair da sua conta atual
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.arrowText}>›</Text>
+            </TouchableOpacity>
+          </ResponsiveCard>
+        </ScrollView>
+      </ResponsiveContainer>
     </View>
   );
 };
@@ -209,21 +212,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: spacing.screenPadding,
-  },
-  card: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: spacing.borderRadius.lg,
-    padding: spacing.cardPadding,
-    marginBottom: spacing.md,
-    shadowColor: colors.shadow.medium,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
   },
   cardTitle: {
     fontSize: 18,

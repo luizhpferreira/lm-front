@@ -1,3 +1,5 @@
+import { getAdaptivePadding, getAdaptiveMargins, getAdaptiveBorderRadius } from '../utils/responsive';
+
 export const spacing = {
   // Espaçamentos base
   xs: 4,
@@ -7,39 +9,32 @@ export const spacing = {
   xl: 32,
   xxl: 48,
   
-  // Espaçamentos específicos
-  screenPadding: 20,
-  cardPadding: 24,
-  buttonPadding: 16,
-  inputPadding: 16,
-  
-  // Margens
-  margin: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+  // Espaçamentos específicos (agora responsivos)
+  get screenPadding() {
+    return getAdaptivePadding().screen;
+  },
+  get cardPadding() {
+    return getAdaptivePadding().card;
+  },
+  get buttonPadding() {
+    return getAdaptivePadding().button;
+  },
+  get inputPadding() {
+    return getAdaptivePadding().input;
   },
   
-  // Padding
-  padding: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+  // Margens (agora responsivas)
+  get margin() {
+    return getAdaptiveMargins();
   },
   
-  // Border radius
-  borderRadius: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
-    round: 50,
+  // Padding (agora responsivas)
+  get padding() {
+    return getAdaptiveMargins(); // Reutiliza as margens adaptativas
+  },
+  
+  // Border radius (agora responsivo)
+  get borderRadius() {
+    return getAdaptiveBorderRadius();
   },
 };

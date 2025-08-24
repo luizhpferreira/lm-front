@@ -1,14 +1,18 @@
+import { scaleFont } from '../utils/responsive';
+
 export const typography = {
-  // Tamanhos de fonte
-  fontSize: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-    xxxl: 32,
-    display: 40,
+  // Tamanhos de fonte (agora responsivos)
+  get fontSize() {
+    return {
+      xs: scaleFont(12),
+      sm: scaleFont(14),
+      md: scaleFont(16),
+      lg: scaleFont(18),
+      xl: scaleFont(20),
+      xxl: scaleFont(24),
+      xxxl: scaleFont(32),
+      display: scaleFont(40),
+    };
   },
   
   // Pesos de fonte
@@ -29,52 +33,54 @@ export const typography = {
     loose: 1.8,
   },
   
-  // Estilos de texto pré-definidos
-  styles: {
-    h1: {
-      fontSize: 32,
-      fontWeight: '700',
-      lineHeight: 1.2,
-    },
-    h2: {
-      fontSize: 24,
-      fontWeight: '600',
-      lineHeight: 1.3,
-    },
-    h3: {
-      fontSize: 20,
-      fontWeight: '600',
-      lineHeight: 1.4,
-    },
-    h4: {
-      fontSize: 18,
-      fontWeight: '500',
-      lineHeight: 1.4,
-    },
-    body: {
-      fontSize: 16,
-      fontWeight: '400',
-      lineHeight: 1.5,
-    },
-    bodySmall: {
-      fontSize: 14,
-      fontWeight: '400',
-      lineHeight: 1.5,
-    },
-    caption: {
-      fontSize: 12,
-      fontWeight: '400',
-      lineHeight: 1.4,
-    },
-    button: {
-      fontSize: 16,
-      fontWeight: '600',
-      lineHeight: 1.2,
-    },
-    buttonSmall: {
-      fontSize: 14,
-      fontWeight: '600',
-      lineHeight: 1.2,
-    },
+  // Estilos de texto pré-definidos (agora responsivos)
+  get styles() {
+    return {
+      h1: {
+        fontSize: scaleFont(32),
+        fontWeight: '700',
+        lineHeight: 1.2,
+      },
+      h2: {
+        fontSize: scaleFont(24),
+        fontWeight: '600',
+        lineHeight: 1.3,
+      },
+      h3: {
+        fontSize: scaleFont(20),
+        fontWeight: '600',
+        lineHeight: 1.4,
+      },
+      h4: {
+        fontSize: scaleFont(18),
+        fontWeight: '500',
+        lineHeight: 1.4,
+      },
+      body: {
+        fontSize: scaleFont(16),
+        fontWeight: '400',
+        lineHeight: 1.5,
+      },
+      bodySmall: {
+        fontSize: scaleFont(14),
+        fontWeight: '400',
+        lineHeight: 1.5,
+      },
+      caption: {
+        fontSize: scaleFont(12),
+        fontWeight: '400',
+        lineHeight: 1.4,
+      },
+      button: {
+        fontSize: scaleFont(16),
+        fontWeight: '600',
+        lineHeight: 1.2,
+      },
+      buttonSmall: {
+        fontSize: scaleFont(14),
+        fontWeight: '600',
+        lineHeight: 1.2,
+      },
+    };
   },
 };
