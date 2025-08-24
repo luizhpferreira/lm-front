@@ -10,6 +10,7 @@ interface AuthContextType {
   register: (email: string, cpf: string, password: string, passwordRepeat: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string, newPasswordRepeat: string) => Promise<void>;
+  confirmEmail: (token: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -129,6 +130,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const confirmEmail = async (token: string) => {
+    try {
+      const response = await apiService.confirmEmail(token);
+      if (!response.success) {
+        throw new Error(response.message || 'Erro ao confirmar email');
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Erro ao confirmar email');
+    }
+  };
+
   const value: AuthContextType = {
     isAuthenticated,
     user,
@@ -138,6 +150,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     forgotPassword,
     resetPassword,
+    confirmEmail,
   };
 
   return (

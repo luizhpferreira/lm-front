@@ -8,6 +8,7 @@ import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { PaymentStatusScreen } from '../screens/PaymentStatusScreen';
 import { PreferencesScreen } from '../screens/PreferencesScreen';
+import { EmailConfirmationScreen } from '../screens/EmailConfirmationScreen';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
 const Stack = createStackNavigator();
@@ -46,6 +47,7 @@ export const AppNavigator = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="EmailConfirmation" component={EmailConfirmationScreen} />
           </>
         )}
       </Stack.Navigator>
