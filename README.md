@@ -38,13 +38,17 @@ npm install
 
 ### 2. Configurar IP do BFF
 Edite o arquivo `src/services/api.ts` e altere a URL base:
+
+**Para produção (com cloudflared tunnel):**
 ```typescript
-private baseURL: string = 'http://SEU_IP:8080';
+private baseURL: string = 'https://luma.app.br';
 ```
 
 **Para desenvolvimento local:**
-- Use `http://localhost:8080` se estiver rodando no emulador
-- Use `http://192.168.0.12:8080` (ou seu IP local) se estiver testando no dispositivo físico
+```typescript
+private baseURL: string = 'http://localhost:8080'; // se estiver rodando no emulador
+private baseURL: string = 'http://192.168.0.12:8080'; // ou seu IP local para dispositivo físico
+```
 
 ### 3. Executar o App
 ```bash

@@ -71,7 +71,7 @@ export interface InvoiceData {
 
 class ApiService {
   private api: AxiosInstance;
-  private baseURL: string = 'http://10.0.2.2:8080'; // IP do emulador para acessar localhost
+  private baseURL: string = 'https://luma.app.br'; // URL de produção com cloudflared tunnel
 
   constructor() {
     this.api = axios.create({
