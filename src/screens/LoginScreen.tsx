@@ -60,7 +60,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <Text style={styles.logoText}>⚡</Text>
             </View>
           </View>
-          <Text style={styles.title}>Luma App</Text>
+          <Text style={styles.title}>Luma</Text>
           <Text style={styles.subtitle}>Faça login na sua carteira Lightning</Text>
         </View>
 

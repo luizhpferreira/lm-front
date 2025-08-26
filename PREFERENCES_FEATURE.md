@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Foi implementada uma nova tela de preferências no aplicativo BFF Luma Mobile, que permite aos usuários gerenciar suas configurações de conta de forma organizada e intuitiva.
+Foi implementada uma nova tela de preferências no aplicativo Luma Mobile, que permite aos usuários gerenciar suas configurações de conta de forma organizada e intuitiva.
 
 ## Funcionalidades Implementadas
 

@@ -1,8 +1,8 @@
-# Guia de Responsividade - BFF Luma Mobile
+# Guia de Responsividade - Luma Mobile
 
 ## Visão Geral
 
-O aplicativo BFF Luma Mobile foi implementado com um sistema completo de responsividade que se adapta automaticamente a diferentes tamanhos de tela, desde smartphones até tablets.
+O aplicativo Luma Mobile foi implementado com um sistema completo de responsividade que se adapta automaticamente a diferentes tamanhos de tela, desde smartphones até tablets.
 
 ## 🎯 Objetivos da Responsividade
 

@@ -1,4 +1,4 @@
-# BFF Luma Mobile App
+# Luma Mobile App
 
 Um aplicativo mobile React Native/Expo que se comunica com o BFF Luma para gerenciar carteiras Lightning.
 

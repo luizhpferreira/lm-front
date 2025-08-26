@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🧪 Testando BFF Luma Mobile App"
+echo "🧪 Testando Luma Mobile App"
 echo "================================"
 
 # Verificar se o BFF está rodando
