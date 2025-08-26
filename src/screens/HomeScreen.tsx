@@ -79,7 +79,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <Text style={styles.logoText}>⚡</Text>
             </View>
           </View>
-          <Text style={styles.headerTitle}>BFF Luma</Text>
+          <Text style={styles.headerTitle}>Luma</Text>
         </View>
         <TouchableOpacity 
           style={styles.preferencesButton} 
