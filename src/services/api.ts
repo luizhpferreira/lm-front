@@ -39,6 +39,10 @@ export interface CreateInvoiceRequest {
   // wallet_id será preenchido automaticamente pelo backend
 }
 
+export interface PayInvoiceRequest {
+  payment_request: string;
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
@@ -219,6 +223,18 @@ class ApiService {
   async checkPaymentStatus(paymentHash: string): Promise<ApiResponse<any>> {
     try {
       const response: AxiosResponse<ApiResponse> = await this.api.get(`/api/v1/payments/status?payment_hash=${paymentHash}`);
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Pagar invoice
+  async payInvoice(paymentRequest: string): Promise<ApiResponse<any>> {
+    try {
+      const response: AxiosResponse<ApiResponse> = await this.api.post('/api/v1/payments', {
+        payment_request: paymentRequest
+      });
       return response.data;
     } catch (error: any) {
       throw this.handleError(error);

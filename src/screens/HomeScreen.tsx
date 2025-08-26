@@ -117,6 +117,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           >
             <Text style={[styles.actionButtonText, styles.secondaryActionText]}>Verificar Pagamento</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.tertiaryAction]}
+            onPress={() => navigation.navigate('QRCodeScanner')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.actionButtonText, styles.tertiaryActionText]}>💳 Pagar Invoice</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Invoice Criado */}
@@ -315,6 +323,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary.main,
   },
+  tertiaryAction: {
+    backgroundColor: colors.background.tertiary,
+    borderWidth: 2,
+    borderColor: colors.success.main,
+  },
   actionButtonText: {
     color: colors.text.inverse,
     fontSize: 16,
@@ -322,6 +335,9 @@ const styles = StyleSheet.create({
   },
   secondaryActionText: {
     color: colors.primary.main,
+  },
+  tertiaryActionText: {
+    color: colors.success.main,
   },
   modalOverlay: {
     flex: 1,
