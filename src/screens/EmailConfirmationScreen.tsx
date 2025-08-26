@@ -22,7 +22,7 @@ export const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = (
   const nav = useNavigation();
 
   useEffect(() => {
-    const token = route.params?.token;
+    const token = (route.params as any)?.token;
     if (token) {
       confirmEmail(token);
     }
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.bold as any,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: spacing.sm,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
+    fontWeight: typography.fontWeight.semibold as any,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     borderRadius: spacing.borderRadius.md,
     textAlign: 'center',
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
+    fontWeight: typography.fontWeight.semibold as any,
   },
   footerText: {
     fontSize: typography.fontSize.sm,
