@@ -1,4 +1,4 @@
-package com.anonymous.BFFLumaMobile
+package com.anonymous.lumamobile
 
 import android.os.Build
 import android.os.Bundle

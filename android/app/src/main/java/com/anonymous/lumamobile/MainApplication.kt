@@ -1,4 +1,4 @@
-package com.anonymous.BFFLumaMobile
+package com.anonymous.lumamobile
 
 import android.app.Application
 import android.content.res.Configuration

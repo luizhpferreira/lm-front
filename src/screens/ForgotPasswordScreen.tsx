@@ -32,7 +32,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navi
       await forgotPassword(email);
       Alert.alert(
         'Email Enviado',
-        'Se o email existir em nossa base, você receberá um link de recuperação.',
+        'Se o email existir em nossa base, você receberá um link de recuperação. Clique no link no email para abrir o aplicativo e redefinir sua senha.',
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error: any) {
@@ -51,7 +51,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navi
         <View style={styles.header}>
           <Text style={styles.title}>Recuperar Senha</Text>
           <Text style={styles.subtitle}>
-            Digite seu email para receber um link de recuperação
+            Digite seu email para receber um link de recuperação que abrirá o aplicativo
           </Text>
         </View>
 

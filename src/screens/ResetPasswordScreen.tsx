@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { useResponsive } from '../utils/responsive';
+import { isTablet, isPhone } from '../utils/responsive';
 
 interface ResetPasswordScreenProps {
   navigation: any;
@@ -28,7 +28,8 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ naviga
   const [validatingToken, setValidatingToken] = useState(true);
   const [showTokenInput, setShowTokenInput] = useState(false);
   const { resetPassword } = useAuth();
-  const { isTablet, isMobile } = useResponsive();
+  const tablet = isTablet();
+  const mobile = isPhone();
 
   useEffect(() => {
     // Extrair token da URL ou parâmetros da rota
@@ -43,6 +44,9 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ naviga
       setShowTokenInput(true);
     }
   }, [route.params]);
+
+  // O React Navigation já gerencia o deep linking automaticamente
+  // através da configuração no NavigationContainer
 
   const handleResetPassword = async () => {
     if (showTokenInput && !token) {
@@ -123,7 +127,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ naviga
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={[styles.content, isTablet && styles.tabletContent]}>
+        <View style={[styles.content, tablet && styles.tabletContent]}>
           <View style={styles.header}>
             <Text style={styles.title}>Redefinir Senha</Text>
             <Text style={styles.subtitle}>

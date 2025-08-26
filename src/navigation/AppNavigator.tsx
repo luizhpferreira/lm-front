@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { PaymentStatusScreen } from '../screens/PaymentStatusScreen';
 import { PreferencesScreen } from '../screens/PreferencesScreen';
@@ -27,8 +28,30 @@ export const AppNavigator = () => {
     return <LoadingScreen />;
   }
 
+  // Configuração simples do deep linking
+  const linking = {
+    prefixes: ['bffluma://'],
+    config: {
+      screens: {
+        ResetPassword: {
+          path: 'reset-password',
+          parse: {
+            token: (token: string) => token,
+          },
+        },
+        Login: 'login',
+        EmailConfirmation: {
+          path: 'confirm-email',
+          parse: {
+            token: (token: string) => token,
+          },
+        },
+      },
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -47,6 +70,7 @@ export const AppNavigator = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
             <Stack.Screen name="EmailConfirmation" component={EmailConfirmationScreen} />
           </>
         )}

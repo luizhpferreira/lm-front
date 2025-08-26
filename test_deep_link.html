@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Deep Link - BFF Luma</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px;
+            font-weight: bold;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #28a745;
+        }
+        .success:hover {
+            background: #1e7e34;
+        }
+        .info {
+            background: #17a2b8;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Deep Link - BFF Luma</h1>
+        
+        <div class="info">
+            <strong>Como usar:</strong>
+            <ol>
+                <li>Clique em um dos botões abaixo</li>
+                <li>Se o app estiver instalado, ele deve abrir automaticamente</li>
+                <li>Se não abrir, verifique se o app está instalado</li>
+            </ol>
+        </div>
+
+        <h2>🔗 Testes de Deep Link</h2>
+        
+        <h3>Reset de Senha</h3>
+        <a href="bffluma://reset-password?token=test-token-123" class="button success">
+            📱 Abrir App - Reset Senha
+        </a>
+        
+        <h3>Login</h3>
+        <a href="bffluma://login" class="button">
+            📱 Abrir App - Login
+        </a>
+        
+        <h3>Confirmação de Email</h3>
+        <a href="bffluma://confirm-email?token=test-email-token" class="button">
+            📱 Abrir App - Confirmar Email
+        </a>
+
+        <h2>📋 Informações</h2>
+        <p><strong>Scheme configurado:</strong> bffluma://</p>
+        <p><strong>Rotas disponíveis:</strong></p>
+        <ul>
+            <li>reset-password?token=TOKEN</li>
+            <li>login</li>
+            <li>confirm-email?token=TOKEN</li>
+        </ul>
+
+        <h2>🔧 Troubleshooting</h2>
+        <p>Se o app não abrir:</p>
+        <ol>
+            <li>Verifique se o app está instalado</li>
+            <li>Verifique se o scheme está configurado no app.json</li>
+            <li>Teste em um dispositivo físico (não emulador)</li>
+            <li>Verifique se o app foi compilado com as configurações corretas</li>
+        </ol>
+    </div>
+
+    <script>
+        // Função para testar se o deep link funciona
+        function testDeepLink(url) {
+            console.log('Testando deep link:', url);
+            
+            // Tenta abrir o deep link
+            window.location.href = url;
+            
+            // Após 2 segundos, verifica se ainda estamos na mesma página
+            setTimeout(() => {
+                if (document.hidden) {
+                    console.log('✅ Deep link funcionou! App foi aberto.');
+                } else {
+                    console.log('❌ Deep link não funcionou. App não foi aberto.');
+                    alert('Deep link não funcionou. Verifique se o app está instalado.');
+                }
+            }, 2000);
+        }
+
+        // Adiciona listeners aos botões
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.href;
+                    testDeepLink(url);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

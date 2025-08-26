@@ -257,8 +257,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.anonymous.BFFLumaMobile";
-				PRODUCT_NAME = "BFFLumaMobile";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.anonymous.luma-mobile";
+				PRODUCT_NAME = "lumamobile";
 				SWIFT_OBJC_BRIDGING_HEADER = "BFFLumaMobile/BFFLumaMobile-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -286,8 +286,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.anonymous.BFFLumaMobile";
-				PRODUCT_NAME = "BFFLumaMobile";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.anonymous.luma-mobile";
+				PRODUCT_NAME = "lumamobile";
 				SWIFT_OBJC_BRIDGING_HEADER = "BFFLumaMobile/BFFLumaMobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";

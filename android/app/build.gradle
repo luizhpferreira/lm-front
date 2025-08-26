@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.BFFLumaMobile'
+    namespace 'com.anonymous.lumamobile'
     defaultConfig {
-        applicationId 'com.anonymous.BFFLumaMobile'
+        applicationId 'com.anonymous.lumamobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
