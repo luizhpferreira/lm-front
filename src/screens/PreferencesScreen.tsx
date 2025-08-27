@@ -99,11 +99,6 @@ export const PreferencesScreen: React.FC<PreferencesScreenProps> = ({ navigation
               <Text style={styles.infoLabel}>Email:</Text>
               <Text style={styles.infoValue}>{user?.email}</Text>
             </View>
-            
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Wallet ID:</Text>
-              <Text style={styles.infoValue}>{user?.wallet_id}</Text>
-            </View>
           </ResponsiveCard>
 
           {/* Informações da Carteira */}
@@ -139,7 +134,7 @@ export const PreferencesScreen: React.FC<PreferencesScreenProps> = ({ navigation
             
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Desenvolvido por</Text>
-              <Text style={styles.infoValue}>BFF Luma</Text>
+              <Text style={styles.infoValue}>Luma</Text>
             </View>
           </ResponsiveCard>
 

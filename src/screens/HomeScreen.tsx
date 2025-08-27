@@ -7,11 +7,9 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
-  TextInput,
-  Modal,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { apiService, WalletData, InvoiceData } from '../services/api';
+import { apiService, WalletData } from '../services/api';
 import { colors, spacing, typography } from '../theme';
 
 interface HomeScreenProps {
@@ -22,10 +20,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
-  const [invoiceAmount, setInvoiceAmount] = useState('');
-  const [invoiceMemo, setInvoiceMemo] = useState('');
-  const [createdInvoice, setCreatedInvoice] = useState<InvoiceData | null>(null);
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -35,38 +30,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
 
 
-  const handleCreateInvoice = async () => {
-    if (!invoiceAmount || !invoiceMemo) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
-      return;
-    }
 
-    const amount = parseInt(invoiceAmount);
-    if (isNaN(amount) || amount <= 0) {
-      Alert.alert('Erro', 'Por favor, digite um valor válido');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await apiService.createInvoice({
-        amount,
-        memo: invoiceMemo,
-      });
-
-      if (response.success && response.data) {
-        setCreatedInvoice(response.data);
-        setShowCreateInvoice(false);
-        setInvoiceAmount('');
-        setInvoiceMemo('');
-        Alert.alert('Sucesso', 'Invoice criado com sucesso!');
-      }
-    } catch (error: any) {
-      Alert.alert('Erro ao criar invoice', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
 
@@ -97,18 +61,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       >
 
 
-        {/* Ações */}
+        {/* Pagamentos */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Ações</Text>
+          <Text style={styles.cardTitle}>Pagamentos</Text>
           
-          <TouchableOpacity
-            style={[styles.actionButton, styles.primaryAction]}
-            onPress={() => setShowCreateInvoice(true)}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.actionButtonText}>Criar Invoice</Text>
-          </TouchableOpacity>
+
 
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryAction]}
@@ -120,95 +77,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
           <TouchableOpacity
             style={[styles.actionButton, styles.tertiaryAction]}
-            onPress={() => navigation.navigate('QRCodeScanner')}
+            onPress={() => navigation.navigate('PayInvoice')}
             activeOpacity={0.8}
           >
             <Text style={[styles.actionButtonText, styles.tertiaryActionText]}>💳 Pagar Invoice</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Invoice Criado */}
-        {createdInvoice && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Último Invoice Criado</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Valor:</Text>
-              <Text style={styles.infoValue}>{createdInvoice.amount} sats</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Memo:</Text>
-              <Text style={styles.infoValue}>{createdInvoice.memo}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Payment Hash:</Text>
-              <Text style={styles.infoValue} numberOfLines={1}>
-                {createdInvoice.payment_hash}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Payment Request:</Text>
-              <Text style={styles.infoValue} numberOfLines={3}>
-                {createdInvoice.payment_request}
-              </Text>
-            </View>
-          </View>
-        )}
+
       </ScrollView>
 
-      {/* Modal para criar invoice */}
-      <Modal
-        visible={showCreateInvoice}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCreateInvoice(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Criar Invoice</Text>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Valor (sats)</Text>
-              <TextInput
-                style={styles.input}
-                value={invoiceAmount}
-                onChangeText={setInvoiceAmount}
-                placeholder="Digite o valor em satoshis"
-                keyboardType="numeric"
-              />
-            </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Memo</Text>
-              <TextInput
-                style={styles.input}
-                value={invoiceMemo}
-                onChangeText={setInvoiceMemo}
-                placeholder="Digite uma descrição"
-                multiline
-              />
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowCreateInvoice(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton, loading && styles.buttonDisabled]}
-                onPress={handleCreateInvoice}
-                disabled={loading}
-              >
-                <Text style={styles.confirmButtonText}>
-                  {loading ? 'Criando...' : 'Criar'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
@@ -339,82 +218,5 @@ const styles = StyleSheet.create({
   tertiaryActionText: {
     color: colors.success.main,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: spacing.borderRadius.lg,
-    padding: spacing.cardPadding,
-    width: '90%',
-    maxWidth: 400,
-    shadowColor: colors.shadow.dark,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text.primary,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.inputPadding,
-    fontSize: 16,
-    backgroundColor: colors.background.tertiary,
-    color: colors.text.primary,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.lg,
-  },
-  modalButton: {
-    flex: 1,
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.buttonPadding,
-    alignItems: 'center',
-    marginHorizontal: spacing.sm,
-  },
-  cancelButton: {
-    backgroundColor: colors.neutral[200],
-  },
-  confirmButton: {
-    backgroundColor: colors.primary.main,
-  },
-  buttonDisabled: {
-    backgroundColor: colors.neutral[400],
-    opacity: 0.6,
-  },
-  cancelButtonText: {
-    color: colors.text.secondary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  confirmButtonText: {
-    color: colors.text.inverse,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
 });
