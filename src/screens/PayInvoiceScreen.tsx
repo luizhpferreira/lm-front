@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { apiService } from '../services/api';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -35,9 +35,9 @@ export const PayInvoiceScreen: React.FC<PayInvoiceScreenProps> = ({ navigation }
 
     setLoading(true);
     try {
-      const response = await api.payInvoice(paymentRequest.trim());
+      const response = await apiService.payInvoice(paymentRequest.trim());
       
-      if (response.success) {
+      if (response.success && response.data) {
         Alert.alert(
           'Sucesso!',
           `Pagamento realizado com sucesso!\n\nHash: ${response.data.payment_hash}\nValor: ${response.data.amount} sats\nMemo: ${response.data.memo || 'N/A'}\nStatus: ${response.data.paid ? 'Pago' : 'Processando'}`,
