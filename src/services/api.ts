@@ -71,12 +71,13 @@ export interface InvoiceData {
   payment_hash: string;
   amount: number;
   memo: string;
+  expires_at?: string;
 }
 
 class ApiService {
   private api: AxiosInstance;
-  //private baseURL: string = 'https://luma.app.br'; 
-  private baseURL: string = 'http://10.0.2.2:8080'; // URL local para emulador Android
+  private baseURL: string = 'https://luma.app.br'; 
+  //private baseURL: string = 'http://10.0.2.2:8080'; // URL local para emulador Android
 
   constructor() {
     this.api = axios.create({
