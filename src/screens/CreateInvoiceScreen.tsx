@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { colors, spacing, typography } from '../theme';
@@ -22,6 +23,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [createdInvoice, setCreatedInvoice] = useState<any>(null);
 
   const handleCreateInvoice = async () => {
     if (!amount.trim()) {
@@ -48,9 +50,10 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
       });
 
       if (response.success && response.data) {
+        setCreatedInvoice(response.data);
         Alert.alert(
           'Invoice Criado!',
-          `Invoice criado com sucesso!\n\nValor: ${amount} sats\nMemo: ${response.data.memo}\n\nPayment Request: ${response.data.payment_request}`,
+          `Invoice criado com sucesso!\n\nValor: ${amount} sats\nMemo: ${response.data.memo}`,
           [
             {
               text: 'OK',
@@ -69,6 +72,21 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyInvoice = async () => {
+    if (createdInvoice?.payment_request) {
+      try {
+        await Clipboard.setString(createdInvoice.payment_request);
+        Alert.alert('Sucesso', 'Payment Request copiado para a área de transferência!');
+      } catch (error) {
+        Alert.alert('Erro', 'Erro ao copiar para a área de transferência');
+      }
+    }
+  };
+
+  const handleClearInvoice = () => {
+    setCreatedInvoice(null);
   };
 
   return (
@@ -126,6 +144,56 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
             )}
           </TouchableOpacity>
         </View>
+
+        {createdInvoice && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>✅ Invoice Criado</Text>
+            
+            <View style={styles.invoiceInfo}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Valor:</Text>
+                <Text style={styles.infoValue}>{createdInvoice.amount} sats</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Memo:</Text>
+                <Text style={styles.infoValue}>{createdInvoice.memo}</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Hash:</Text>
+                <Text style={styles.infoValue}>{createdInvoice.payment_hash}</Text>
+              </View>
+            </View>
+
+            <View style={styles.paymentRequestContainer}>
+              <Text style={styles.paymentRequestLabel}>Payment Request (BOLT11):</Text>
+              <View style={styles.paymentRequestBox}>
+                <Text style={styles.paymentRequestText} selectable={true}>
+                  {createdInvoice.payment_request}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.copyButton}
+                onPress={handleCopyInvoice}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.copyButtonText}>📋 Copiar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={handleClearInvoice}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.clearButtonText}>🗑️ Limpar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -230,6 +298,79 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: colors.text.inverse,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  invoiceInfo: {
+    marginBottom: spacing.lg,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: colors.text.primary,
+    fontWeight: '500',
+    flex: 2,
+    textAlign: 'right',
+  },
+  paymentRequestContainer: {
+    marginBottom: spacing.lg,
+  },
+  paymentRequestLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  paymentRequestBox: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  paymentRequestText: {
+    fontSize: 12,
+    color: colors.text.primary,
+    fontFamily: 'monospace',
+    lineHeight: 18,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  copyButton: {
+    flex: 1,
+    backgroundColor: colors.primary.main,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.buttonPadding,
+    alignItems: 'center',
+  },
+  copyButtonText: {
+    color: colors.text.inverse,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  clearButton: {
+    flex: 1,
+    backgroundColor: colors.error.main,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.buttonPadding,
+    alignItems: 'center',
+  },
+  clearButtonText: {
+    color: colors.text.inverse,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

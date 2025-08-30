@@ -40,7 +40,7 @@ export const PayInvoiceScreen: React.FC<PayInvoiceScreenProps> = ({ navigation }
       if (response.success) {
         Alert.alert(
           'Sucesso!',
-          `Pagamento realizado com sucesso!\n\nHash: ${response.data.PaymentHash}\nValor: ${response.data.Amount} sats\nMemo: ${response.data.Memo || 'N/A'}`,
+          `Pagamento realizado com sucesso!\n\nHash: ${response.data.payment_hash}\nValor: ${response.data.amount} sats\nMemo: ${response.data.memo || 'N/A'}\nStatus: ${response.data.paid ? 'Pago' : 'Processando'}`,
           [
             {
               text: 'OK',

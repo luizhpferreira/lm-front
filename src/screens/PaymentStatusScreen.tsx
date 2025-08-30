@@ -99,9 +99,33 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
             {paymentStatus.data && (
               <View style={styles.dataContainer}>
                 <Text style={styles.dataTitle}>Dados do Pagamento:</Text>
-                <Text style={styles.dataText}>
-                  {JSON.stringify(paymentStatus.data, null, 2)}
-                </Text>
+                
+                <View style={styles.dataRow}>
+                  <Text style={styles.dataLabel}>Payment Hash:</Text>
+                  <Text style={styles.dataValue}>{paymentStatus.data.payment_hash}</Text>
+                </View>
+                
+                <View style={styles.dataRow}>
+                  <Text style={styles.dataLabel}>Status:</Text>
+                  <Text style={[
+                    styles.dataValue,
+                    { color: paymentStatus.data.paid ? '#27ae60' : '#f39c12' }
+                  ]}>
+                    {paymentStatus.data.paid ? 'Pago' : 'Pendente'}
+                  </Text>
+                </View>
+                
+                <View style={styles.dataRow}>
+                  <Text style={styles.dataLabel}>Valor:</Text>
+                  <Text style={styles.dataValue}>{paymentStatus.data.amount} sats</Text>
+                </View>
+                
+                {paymentStatus.data.memo && (
+                  <View style={styles.dataRow}>
+                    <Text style={styles.dataLabel}>Memo:</Text>
+                    <Text style={styles.dataValue}>{paymentStatus.data.memo}</Text>
+                  </View>
+                )}
               </View>
             )}
 
@@ -235,6 +259,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#2c3e50',
     fontFamily: 'monospace',
+  },
+  dataRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dataLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7f8c8d',
+    flex: 1,
+  },
+  dataValue: {
+    fontSize: 14,
+    color: '#2c3e50',
+    fontWeight: '500',
+    flex: 2,
+    textAlign: 'right',
   },
   errorContainer: {
     marginTop: 16,

@@ -74,6 +74,13 @@ export interface InvoiceData {
   expires_at?: string;
 }
 
+export interface PaymentData {
+  payment_hash: string;
+  paid: boolean;
+  amount: number;
+  memo: string;
+}
+
 class ApiService {
   private api: AxiosInstance;
   private baseURL: string = 'https://luma.app.br'; 
@@ -235,9 +242,9 @@ class ApiService {
   }
 
   // Pagar invoice
-  async payInvoice(paymentRequest: string): Promise<ApiResponse<any>> {
+  async payInvoice(paymentRequest: string): Promise<ApiResponse<PaymentData>> {
     try {
-      const response: AxiosResponse<ApiResponse> = await this.api.post('/api/v1/payments', {
+      const response: AxiosResponse<ApiResponse<PaymentData>> = await this.api.post('/api/v1/payments', {
         payment_request: paymentRequest
       });
       return response.data;
