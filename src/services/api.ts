@@ -75,7 +75,8 @@ export interface InvoiceData {
 
 class ApiService {
   private api: AxiosInstance;
-  private baseURL: string = 'https://luma.app.br'; // URL de produção com cloudflared tunnel
+  //private baseURL: string = 'https://luma.app.br'; 
+  private baseURL: string = 'http://10.0.2.2:8080'; // URL local para emulador Android
 
   constructor() {
     this.api = axios.create({
@@ -140,16 +141,19 @@ class ApiService {
   // Login
   async login(data: LoginRequest): Promise<ApiResponse<LoginData>> {
     try {
+      console.log('DEBUG: ApiService login called with:', data);
       const response: AxiosResponse<ApiResponse<LoginData>> = await this.api.post('/api/v1/login', data);
       
       if (response.data.success && response.data.data?.token) {
         // Salvar token e dados do usuário
         await AsyncStorage.setItem('auth_token', response.data.data.token);
         await AsyncStorage.setItem('user_data', JSON.stringify(response.data.data));
+        console.log('DEBUG: ApiService login - token saved successfully');
       }
       
       return response.data;
     } catch (error: any) {
+      console.log('DEBUG: ApiService login error:', error.response?.data || error.message);
       throw this.handleError(error);
     }
   }
