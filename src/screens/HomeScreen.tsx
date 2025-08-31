@@ -67,10 +67,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           
           <TouchableOpacity
             style={[styles.actionButton, styles.primaryAction]}
+            onPress={() => navigation.navigate('WalletBalance')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.actionButtonText]}>💰 Meu Saldo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.primaryAction]}
             onPress={() => navigation.navigate('CreateInvoice')}
             activeOpacity={0.8}
           >
-            <Text style={[styles.actionButtonText]}>💰 Criar Invoice</Text>
+            <Text style={[styles.actionButtonText]}>📄 Criar Invoice</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

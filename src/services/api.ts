@@ -58,6 +58,14 @@ export interface WalletData {
   updated_at: string;
 }
 
+export interface WalletBalanceData {
+  wallet_id: string;
+  email: string;
+  balance: number;
+  pending: number;
+  max_pending: number;
+}
+
 export interface LoginData {
   wallet_id: string;
   email: string;
@@ -215,6 +223,16 @@ class ApiService {
   async getWalletInfo(): Promise<ApiResponse<WalletData>> {
     try {
       const response: AxiosResponse<ApiResponse<WalletData>> = await this.api.get('/api/v1/wallets');
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Obter saldo da carteira
+  async getWalletBalance(): Promise<ApiResponse<WalletBalanceData>> {
+    try {
+      const response: AxiosResponse<ApiResponse<WalletBalanceData>> = await this.api.get('/api/v1/wallets/balance');
       return response.data;
     } catch (error: any) {
       throw this.handleError(error);
