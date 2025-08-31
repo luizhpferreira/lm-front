@@ -57,10 +57,24 @@ export const PayInvoiceScreen: React.FC<PayInvoiceScreenProps> = ({ navigation }
       }
     } catch (error: any) {
       console.error('Erro ao pagar invoice:', error);
-      Alert.alert(
-        'Erro',
-        error.response?.data?.message || 'Erro ao processar pagamento. Tente novamente.'
-      );
+      
+      // Verifica se é erro de saldo insuficiente
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao processar pagamento. Tente novamente.';
+      
+      if (errorMessage.includes('saldo insuficiente') || errorMessage.includes('Insufficient balance')) {
+        Alert.alert(
+          'Saldo Insuficiente',
+          'Sua carteira não possui saldo suficiente para realizar este pagamento.\n\nPara adicionar saldo, entre em contato com o suporte ou aguarde receber um pagamento.',
+          [
+            {
+              text: 'OK',
+              style: 'cancel',
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Erro', errorMessage);
+      }
     } finally {
       setLoading(false);
     }
