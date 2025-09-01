@@ -109,7 +109,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={() => navigation.navigate('CreateInvoice')}
             activeOpacity={0.8}
           >
-            <Text style={[styles.actionButtonText]}>📄 Criar Invoice</Text>
+            <Text style={[styles.actionButtonText]}>📄 Criar Pagamento</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -126,6 +126,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             activeOpacity={0.8}
           >
             <Text style={[styles.actionButtonText, styles.tertiaryActionText]}>💳 Pagar Invoice</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.quaternaryAction]}
+            onPress={() => navigation.navigate('QRCodeScanner')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.actionButtonText, styles.quaternaryActionText]}>📱 Scanner QR Code</Text>
           </TouchableOpacity>
         </View>
 
@@ -299,6 +307,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.success.main,
   },
+  quaternaryAction: {
+    backgroundColor: colors.background.tertiary,
+    borderWidth: 2,
+    borderColor: colors.info.main,
+  },
   actionButtonText: {
     color: colors.text.inverse,
     fontSize: 16,
@@ -309,6 +322,9 @@ const styles = StyleSheet.create({
   },
   tertiaryActionText: {
     color: colors.success.main,
+  },
+  quaternaryActionText: {
+    color: colors.info.main,
   },
 
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
+import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { colors, spacing, typography } from '../theme';
@@ -24,6 +26,9 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
   const [memo, setMemo] = useState('');
   const [loading, setLoading] = useState(false);
   const [createdInvoice, setCreatedInvoice] = useState<any>(null);
+  const [invoiceAmount, setInvoiceAmount] = useState<string>('');
+  const [qrCodeError, setQrCodeError] = useState<boolean>(false);
+  const qrCodeRef = useRef<any>(null);
 
   const handleCreateInvoice = async () => {
     if (!amount.trim()) {
@@ -44,26 +49,22 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
 
     setLoading(true);
     try {
+      console.log('Enviando valor para API:', amountNumber);
       const response = await apiService.createInvoice({
         amount: amountNumber, // Usar sats diretamente
         memo: memo.trim() || 'Invoice criado via app',
       });
+      
+      if (response.success && response.data) {
+        console.log('Valor recebido da API:', response.data.amount);
+      }
 
       if (response.success && response.data) {
         setCreatedInvoice(response.data);
-        Alert.alert(
-          'Invoice Criado!',
-          `Invoice criado com sucesso!\n\nValor: ${amount} sats\nMemo: ${response.data.memo}`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                setAmount('');
-                setMemo('');
-              },
-            },
-          ]
-        );
+        setInvoiceAmount(amount); // Salvar o valor digitado pelo usuário
+        setQrCodeError(false); // Resetar erro do QR Code
+        setAmount('');
+        setMemo('');
       } else {
         Alert.alert('Erro', response.message || 'Erro ao criar invoice');
       }
@@ -77,8 +78,8 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
   const handleCopyInvoice = async () => {
     if (createdInvoice?.payment_request) {
       try {
-        await Clipboard.setString(createdInvoice.payment_request);
-        Alert.alert('Sucesso', 'Payment Request copiado para a área de transferência!');
+        await Clipboard.setStringAsync(createdInvoice.payment_request);
+        Alert.alert('Sucesso', 'Pagamento copiado para a área de transferência!');
       } catch (error) {
         Alert.alert('Erro', 'Erro ao copiar para a área de transferência');
       }
@@ -87,7 +88,10 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
 
   const handleClearInvoice = () => {
     setCreatedInvoice(null);
+    setInvoiceAmount('');
   };
+
+
 
   return (
     <View style={styles.container}>
@@ -98,13 +102,13 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Criar Invoice</Text>
+        <Text style={styles.headerTitle}>Criar Pagamento</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Novo Invoice</Text>
+          <Text style={styles.cardTitle}>Novo Pagamento</Text>
           
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Valor (sats)</Text>
@@ -119,12 +123,12 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Descrição (opcional)</Text>
+            <Text style={styles.inputLabel}>Mensagem (opcional)</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={memo}
               onChangeText={setMemo}
-              placeholder="Descrição do pagamento"
+              placeholder="Mensagem (opcional)"
               multiline
               numberOfLines={3}
               placeholderTextColor={colors.text.tertiary}
@@ -147,18 +151,20 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
 
         {createdInvoice && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>✅ Invoice Criado</Text>
+            <Text style={styles.cardTitle}>✅ Pagamento criado</Text>
             
             <View style={styles.invoiceInfo}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Valor:</Text>
-                <Text style={styles.infoValue}>{createdInvoice.amount} sats</Text>
+                <Text style={styles.infoValue}>{invoiceAmount} sats</Text>
               </View>
               
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Memo:</Text>
-                <Text style={styles.infoValue}>{createdInvoice.memo}</Text>
-              </View>
+              {createdInvoice.memo && createdInvoice.memo !== 'Invoice criado via app' && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Mensagem:</Text>
+                  <Text style={styles.infoValue}>{createdInvoice.memo}</Text>
+                </View>
+              )}
               
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Hash:</Text>
@@ -166,8 +172,41 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
               </View>
             </View>
 
+            {/* QR Code Section */}
+            <View style={styles.qrCodeContainer}>
+              <Text style={styles.qrCodeLabel}>📱 QR Code para Pagamento:</Text>
+              <View style={styles.qrCodeWrapper}>
+                {!qrCodeError ? (
+                  <QRCode
+                    ref={qrCodeRef}
+                    value={createdInvoice.payment_request}
+                    size={200}
+                    color={colors.text.primary}
+                    backgroundColor={colors.background.primary}
+                    onError={(error: any) => {
+                      console.error('Erro ao gerar QR Code:', error);
+                      setQrCodeError(true);
+                    }}
+                  />
+                ) : (
+                  <View style={styles.qrCodeErrorContainer}>
+                    <Text style={styles.qrCodeErrorText}>⚠️ Erro ao gerar QR Code</Text>
+                    <Text style={styles.qrCodeErrorSubtext}>
+                      Use o ID do pagamento abaixo para pagar
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.qrCodeInfo}>
+                {qrCodeError 
+                  ? 'Copie o ID do pagamento e use em qualquer app Lightning'
+                  : 'Escaneie este QR code com qualquer app Lightning para pagar'
+                }
+              </Text>
+            </View>
+
             <View style={styles.paymentRequestContainer}>
-              <Text style={styles.paymentRequestLabel}>Payment Request (BOLT11):</Text>
+              <Text style={styles.paymentRequestLabel}>Id do pagamento:</Text>
               <View style={styles.paymentRequestBox}>
                 <Text style={styles.paymentRequestText} selectable={true}>
                   {createdInvoice.payment_request}
@@ -181,7 +220,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
                 onPress={handleCopyInvoice}
                 activeOpacity={0.8}
               >
-                <Text style={styles.copyButtonText}>📋 Copiar</Text>
+                <Text style={styles.copyButtonText}>📋 Copiar pagamento</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -348,6 +387,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: spacing.sm,
+    flexWrap: 'wrap',
   },
   copyButton: {
     flex: 1,
@@ -355,8 +395,35 @@ const styles = StyleSheet.create({
     borderRadius: spacing.borderRadius.md,
     padding: spacing.buttonPadding,
     alignItems: 'center',
+    minWidth: '45%',
   },
   copyButtonText: {
+    color: colors.text.inverse,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  copyQRButton: {
+    flex: 1,
+    backgroundColor: colors.info.main,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.buttonPadding,
+    alignItems: 'center',
+    minWidth: '45%',
+  },
+  copyQRButtonText: {
+    color: colors.text.inverse,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  shareButton: {
+    flex: 1,
+    backgroundColor: colors.secondary.main,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.buttonPadding,
+    alignItems: 'center',
+    minWidth: '45%',
+  },
+  shareButtonText: {
     color: colors.text.inverse,
     fontSize: 14,
     fontWeight: '600',
@@ -367,10 +434,74 @@ const styles = StyleSheet.create({
     borderRadius: spacing.borderRadius.md,
     padding: spacing.buttonPadding,
     alignItems: 'center',
+    minWidth: '45%',
   },
   clearButtonText: {
     color: colors.text.inverse,
     fontSize: 14,
     fontWeight: '600',
+  },
+  qrCodeContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  qrCodeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  qrCodeWrapper: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  qrCodeInfo: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  qrCodeImage: {
+    width: 200,
+    height: 200,
+  },
+  qrCodePlaceholder: {
+    width: 200,
+    height: 200,
+    backgroundColor: colors.background.tertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: spacing.borderRadius.md,
+  },
+  qrCodePlaceholderText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  qrCodeErrorContainer: {
+    width: 200,
+    height: 200,
+    backgroundColor: colors.background.tertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: spacing.borderRadius.md,
+    borderWidth: 2,
+    borderColor: colors.error.main,
+    borderStyle: 'dashed',
+  },
+  qrCodeErrorText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.error.main,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  qrCodeErrorSubtext: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
 });

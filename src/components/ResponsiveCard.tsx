@@ -24,7 +24,7 @@ export const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
       style={[
         styles.card,
         {
-          maxWidth: layout.maxCardWidth,
+          maxWidth: typeof layout.maxCardWidth === 'number' ? layout.maxCardWidth : undefined,
           alignSelf: layout.centerContent ? 'center' : 'stretch',
           padding: padding || 24,
           margin: margin || 16,

@@ -12,6 +12,7 @@ import { PreferencesScreen } from '../screens/PreferencesScreen';
 import { EmailConfirmationScreen } from '../screens/EmailConfirmationScreen';
 import { PayInvoiceScreen } from '../screens/PayInvoiceScreen';
 import { CreateInvoiceScreen } from '../screens/CreateInvoiceScreen';
+import { QRCodeScannerScreen } from '../screens/QRCodeScannerScreen';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
 const Stack = createStackNavigator();
@@ -67,6 +68,7 @@ export const AppNavigator = () => {
             <Stack.Screen name="PaymentStatus" component={PaymentStatusScreen} />
             <Stack.Screen name="Preferences" component={PreferencesScreen} />
             <Stack.Screen name="PayInvoice" component={PayInvoiceScreen} />
+            <Stack.Screen name="QRCodeScanner" component={QRCodeScannerScreen} />
           </>
         ) : (
           // Rotas de autenticação

@@ -93,6 +93,8 @@ class ApiService {
   private api: AxiosInstance;
   private baseURL: string = 'https://luma.app.br'; 
   //private baseURL: string = 'http://10.0.2.2:8080'; // URL local para emulador Android
+  //private baseURL: string = 'http://localhost:8080'; // URL local para iOS
+  //private baseURL: string = 'http://192.168.0.12:8080'; // URL local para iOS (IP da máquina)
 
   constructor() {
     this.api = axios.create({
