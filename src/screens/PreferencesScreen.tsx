@@ -145,18 +145,7 @@ export const PreferencesScreen: React.FC<PreferencesScreenProps> = ({ navigation
               onPress={handleLogout}
               activeOpacity={0.7}
             >
-              <View style={styles.logoutContent}>
-                <View style={styles.logoutIcon}>
-                  <Text style={styles.logoutIconText}>🚪</Text>
-                </View>
-                <View style={styles.logoutText}>
-                  <Text style={styles.logoutTitle}>Encerrar Sessão</Text>
-                  <Text style={styles.logoutDescription}>
-                    Sair da sua conta atual
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.arrowText}>›</Text>
+              <Text style={styles.logoutTitle}>Encerrar Sessão</Text>
             </TouchableOpacity>
           </ResponsiveCard>
         </ScrollView>
@@ -190,7 +179,6 @@ const styles = StyleSheet.create({
   backButton: {
     padding: spacing.sm,
     borderRadius: spacing.borderRadius.sm,
-    backgroundColor: colors.background.tertiary,
   },
   backButtonText: {
     fontSize: 20,
@@ -275,10 +263,10 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   logoutItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   logoutContent: {
     flexDirection: 'row',
@@ -289,7 +277,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.error.light,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
@@ -304,7 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.error.main,
-    marginBottom: 2,
+    textAlign: 'center',
   },
   logoutDescription: {
     fontSize: 14,

@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { apiService } from '../services/api';
+import { colors, spacing } from '../theme';
 
 interface PaymentStatusScreenProps {
   navigation: any;
@@ -40,27 +41,25 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Voltar</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Verificar Pagamento</Text>
-        <View style={{ width: 60 }} />
+
+        <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Verificar Status do Pagamento</Text>
-          <Text style={styles.description}>
-            Digite o payment hash para verificar o status do pagamento
-          </Text>
-
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Payment Hash</Text>
+            <Text style={styles.label}>Hash do Pagamento</Text>
             <TextInput
               style={styles.input}
               value={paymentHash}
               onChangeText={setPaymentHash}
-              placeholder="Digite o payment hash"
+              placeholder="Cole o hash aqui"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -70,19 +69,18 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleCheckPayment}
             disabled={loading}
+            activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Verificando...' : 'Verificar Status'}
+              {loading ? 'Verificando...' : 'Verificar'}
             </Text>
           </TouchableOpacity>
         </View>
 
         {paymentStatus && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Resultado da Verificação</Text>
-            
             <View style={styles.statusContainer}>
-              <Text style={styles.statusLabel}>Status:</Text>
+              <Text style={styles.statusLabel}>Status</Text>
               <Text style={[
                 styles.statusValue,
                 { color: paymentStatus.success ? '#27ae60' : '#e74c3c' }
@@ -91,22 +89,10 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
               </Text>
             </View>
 
-            <View style={styles.statusContainer}>
-              <Text style={styles.statusLabel}>Mensagem:</Text>
-              <Text style={styles.statusValue}>{paymentStatus.message}</Text>
-            </View>
-
             {paymentStatus.data && (
               <View style={styles.dataContainer}>
-                <Text style={styles.dataTitle}>Dados do Pagamento:</Text>
-                
                 <View style={styles.dataRow}>
-                  <Text style={styles.dataLabel}>Payment Hash:</Text>
-                  <Text style={styles.dataValue}>{paymentStatus.data.payment_hash}</Text>
-                </View>
-                
-                <View style={styles.dataRow}>
-                  <Text style={styles.dataLabel}>Status:</Text>
+                  <Text style={styles.dataLabel}>Status</Text>
                   <Text style={[
                     styles.dataValue,
                     { color: paymentStatus.data.paid ? '#27ae60' : '#f39c12' }
@@ -116,13 +102,13 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
                 </View>
                 
                 <View style={styles.dataRow}>
-                  <Text style={styles.dataLabel}>Valor:</Text>
+                  <Text style={styles.dataLabel}>Valor</Text>
                   <Text style={styles.dataValue}>{paymentStatus.data.amount} sats</Text>
                 </View>
                 
                 {paymentStatus.data.memo && (
                   <View style={styles.dataRow}>
-                    <Text style={styles.dataLabel}>Memo:</Text>
+                    <Text style={styles.dataLabel}>Memo</Text>
                     <Text style={styles.dataValue}>{paymentStatus.data.memo}</Text>
                   </View>
                 )}
@@ -131,7 +117,6 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
 
             {paymentStatus.error && (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorTitle}>Erro:</Text>
                 <Text style={styles.errorText}>{paymentStatus.error}</Text>
               </View>
             )}
@@ -151,20 +136,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'white',
+    padding: spacing.screenPadding,
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
+    borderBottomColor: colors.border.light,
+    shadowColor: colors.shadow.light,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   backButton: {
-    color: '#3498db',
-    fontSize: 16,
+    padding: spacing.sm,
+    borderRadius: spacing.borderRadius.sm,
+  },
+  backButtonText: {
+    fontSize: 24,
     fontWeight: '600',
+    color: colors.text.primary,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2c3e50',
+  },
+  placeholder: {
+    width: 40,
   },
   content: {
     flex: 1,
@@ -214,16 +214,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   button: {
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: colors.primary.main,
+    borderRadius: 25, // Formato de cápsula
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
+    minHeight: 45, // Botão menor
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: '#bdc3c7',
+    opacity: 0.6,
   },
   buttonText: {
-    color: 'white',
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },

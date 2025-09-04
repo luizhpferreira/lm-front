@@ -184,10 +184,8 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📱 Scanner QR Code</Text>
-        <TouchableOpacity style={styles.manualButton} onPress={handleManualInput}>
-          <Text style={styles.manualButtonText}>📝</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Escanear</Text>
+        <View style={styles.placeholder} />
       </View>
 
       <View style={styles.cameraContainer}>
@@ -304,10 +302,9 @@ const styles = StyleSheet.create({
   backButton: {
     padding: spacing.sm,
     borderRadius: spacing.borderRadius.sm,
-    backgroundColor: colors.background.tertiary,
   },
   backButtonText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '600',
     color: colors.text.primary,
   },
@@ -368,12 +365,20 @@ const styles = StyleSheet.create({
   cameraContainer: {
     flex: 1,
     position: 'relative',
+    width: '100%',
+    height: '100%',
   },
   camera: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.3)',

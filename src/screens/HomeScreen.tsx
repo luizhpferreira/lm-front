@@ -8,6 +8,7 @@ import {
   Alert,
   RefreshControl,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService, WalletData, WalletBalanceData } from '../services/api';
@@ -23,6 +24,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [balance, setBalance] = useState<WalletBalanceData | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
+  const [showPayModal, setShowPayModal] = useState(false);
 
   const loadBalance = async () => {
     try {
@@ -71,7 +73,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           style={styles.preferencesButton} 
           onPress={() => navigation.navigate('Preferences')}
         >
-          <Text style={styles.preferencesText}>⚙️</Text>
+          <Text style={styles.preferencesText}>☰</Text>
         </TouchableOpacity>
       </View>
 
@@ -83,7 +85,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       >
         {/* Seção do Saldo */}
         <View style={styles.balanceCard}>
-          <Text style={styles.balanceCardTitle}>💰 Meu Saldo</Text>
           
           {balanceLoading ? (
             <View style={styles.balanceLoadingContainer}>
@@ -91,25 +92,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <Text style={styles.balanceLoadingText}>Carregando...</Text>
             </View>
           ) : (
-            <View style={styles.balanceContainer}>
+            <>
               <Text style={styles.balanceValue}>
                 {balance ? formatSats(balance.balance) : '0'} sats
               </Text>
               <Text style={styles.balanceLabel}>Saldo Disponível</Text>
-            </View>
+            </>
           )}
         </View>
 
         {/* Pagamentos */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Pagamentos</Text>
 
           <TouchableOpacity
             style={[styles.actionButton, styles.primaryAction]}
             onPress={() => navigation.navigate('CreateInvoice')}
             activeOpacity={0.8}
           >
-            <Text style={[styles.actionButtonText]}>📄 Criar Pagamento</Text>
+            <Text style={[styles.actionButtonText]}>Criar Pagamento</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -122,20 +122,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
           <TouchableOpacity
             style={[styles.actionButton, styles.tertiaryAction]}
-            onPress={() => navigation.navigate('PayInvoice')}
+            onPress={() => setShowPayModal(true)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.actionButtonText, styles.tertiaryActionText]}>💳 Pagar Invoice</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.quaternaryAction]}
-            onPress={() => navigation.navigate('QRCodeScanner')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.actionButtonText, styles.quaternaryActionText]}>📱 Scanner QR Code</Text>
+            <Text style={[styles.actionButtonText, styles.tertiaryActionText]}>Pagar</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Modal de Pagamento */}
+        <Modal
+          visible={showPayModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowPayModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+
+              
+              <View style={styles.modalButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.payInvoiceButton]}
+                  onPress={() => {
+                    setShowPayModal(false);
+                    navigation.navigate('PayInvoice');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalButtonText}>Colar Pagamento</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.scannerButton]}
+                  onPress={() => {
+                    setShowPayModal(false);
+                    navigation.navigate('QRCodeScanner');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalButtonText}>Escanear</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowPayModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
       </ScrollView>
 
@@ -152,7 +189,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.screenPadding,
+    paddingHorizontal: 16, // Padding fixo menor para iPhone
+    paddingVertical: 12, // Padding vertical reduzido
     backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
@@ -168,6 +206,7 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1, // Ocupar espaço disponível
   },
   logoContainer: {
     marginRight: spacing.sm,
@@ -176,7 +215,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.gradients.primary[0],
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -184,27 +222,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22, // Título um pouco menor para iPhone
     fontWeight: '700',
     color: colors.text.primary,
+    flex: 1, // Ocupar espaço disponível
   },
   preferencesButton: {
-    padding: spacing.sm,
+    padding: 8, // Padding reduzido para iPhone
     borderRadius: spacing.borderRadius.sm,
-    backgroundColor: colors.background.tertiary,
   },
   preferencesText: {
-    fontSize: 20,
+    fontSize: 18, // Texto um pouco menor para iPhone
     fontWeight: '600',
   },
   content: {
     flex: 1,
-    padding: spacing.screenPadding,
+    paddingHorizontal: Math.max(16, spacing.screenPadding * 0.8), // Responsivo mas otimizado para iPhone
+    paddingVertical: Math.max(12, spacing.screenPadding * 0.6), // Responsivo mas otimizado para iPhone
   },
   balanceCard: {
     backgroundColor: colors.background.secondary,
     borderRadius: spacing.borderRadius.lg,
-    padding: spacing.cardPadding,
+    padding: 20, // Padding fixo menor para iPhone
     marginBottom: spacing.md,
     shadowColor: colors.shadow.medium,
     shadowOffset: {
@@ -253,7 +292,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.background.secondary,
     borderRadius: spacing.borderRadius.lg,
-    padding: spacing.cardPadding,
+    padding: 20, // Padding fixo menor para iPhone
     marginBottom: spacing.md,
     shadowColor: colors.shadow.medium,
     shadowOffset: {
@@ -289,10 +328,20 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   actionButton: {
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.buttonPadding,
+    borderRadius: 25, // Formato de cápsula
+    paddingVertical: 10, // Padding reduzido para iPhone
+    paddingHorizontal: 16, // Padding reduzido para iPhone
     alignItems: 'center',
     marginBottom: spacing.sm,
+    minHeight: 42, // Botões um pouco menores para iPhone
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryAction: {
     backgroundColor: colors.primary.main,
@@ -314,7 +363,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     color: colors.text.inverse,
-    fontSize: 16,
+    fontSize: 15, // Fonte um pouco menor para iPhone
     fontWeight: '600',
   },
   secondaryActionText: {
@@ -325,6 +374,91 @@ const styles = StyleSheet.create({
   },
   quaternaryActionText: {
     color: colors.info.main,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.background.primary,
+    borderRadius: spacing.borderRadius.lg,
+    padding: 20, // Padding fixo menor para iPhone
+    width: '85%', // Largura um pouco maior para iPhone
+    alignItems: 'center',
+    shadowColor: colors.shadow.dark,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: spacing.md,
+  },
+  modalButton: {
+    borderRadius: 25, // Formato de cápsula
+    paddingVertical: 10, // Padding reduzido para iPhone
+    paddingHorizontal: 16, // Padding reduzido para iPhone
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: spacing.sm,
+    minHeight: 42, // Botões um pouco menores para iPhone
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  payInvoiceButton: {
+    backgroundColor: colors.primary.main,
+  },
+  scannerButton: {
+    backgroundColor: colors.info.main,
+  },
+  modalButtonText: {
+    color: colors.text.inverse,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: 25, // Formato de cápsula
+    paddingVertical: Math.max(10, spacing.sm * 1.2), // Responsivo mas otimizado para iPhone
+    paddingHorizontal: Math.max(16, spacing.md * 1.2), // Responsivo mas otimizado para iPhone
+    width: '80%',
+    minHeight: Math.max(42, 45 * 0.9), // Responsivo mas otimizado para iPhone
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cancelButtonText: {
+    color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 
 });

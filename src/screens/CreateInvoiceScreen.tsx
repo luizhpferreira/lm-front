@@ -102,7 +102,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Criar Pagamento</Text>
+
         <View style={styles.placeholder} />
       </View>
 
@@ -144,7 +144,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
             {loading ? (
               <ActivityIndicator color={colors.text.inverse} />
             ) : (
-              <Text style={styles.createButtonText}>💰 Criar Invoice</Text>
+              <Text style={styles.createButtonText}>Criar Pagamento</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -220,7 +220,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
                 onPress={handleCopyInvoice}
                 activeOpacity={0.8}
               >
-                <Text style={styles.copyButtonText}>📋 Copiar pagamento</Text>
+                <Text style={styles.copyButtonText}>Copiar</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -228,7 +228,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
                 onPress={handleClearInvoice}
                 activeOpacity={0.8}
               >
-                <Text style={styles.clearButtonText}>🗑️ Limpar</Text>
+                <Text style={styles.clearButtonText}>Limpar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -263,7 +263,6 @@ const styles = StyleSheet.create({
   backButton: {
     padding: spacing.sm,
     borderRadius: spacing.borderRadius.sm,
-    backgroundColor: colors.background.tertiary,
   },
   backButtonText: {
     fontSize: 20,
@@ -326,10 +325,20 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: colors.primary.main,
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.buttonPadding,
+    borderRadius: 25, // Formato de cápsula
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
     marginTop: spacing.md,
+    minHeight: 45, // Botão menor
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   createButtonDisabled: {
     opacity: 0.6,
@@ -392,10 +401,20 @@ const styles = StyleSheet.create({
   copyButton: {
     flex: 1,
     backgroundColor: colors.primary.main,
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.buttonPadding,
+    borderRadius: 25, // Formato de cápsula
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
     minWidth: '45%',
+    minHeight: 45, // Botão menor
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   copyButtonText: {
     color: colors.text.inverse,
@@ -431,10 +450,20 @@ const styles = StyleSheet.create({
   clearButton: {
     flex: 1,
     backgroundColor: colors.error.main,
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.buttonPadding,
+    borderRadius: 25, // Formato de cápsula
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
     minWidth: '45%',
+    minHeight: 45, // Botão menor
+    shadowColor: colors.shadow.medium,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   clearButtonText: {
     color: colors.text.inverse,
