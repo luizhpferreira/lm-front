@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { colors, spacing, typography } from '../theme';
@@ -20,6 +21,7 @@ interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
@@ -55,6 +57,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          
           <View style={styles.logoContainer}>
             <View style={styles.logoCircle}>
               <Text style={styles.logoText}>⚡</Text>
@@ -77,14 +86,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             maxLength={14}
           />
 
-          <Input
-            label="Senha"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Digite sua senha"
-            secureTextEntry
-            autoCapitalize="none"
-          />
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Senha</Text>
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Digite sua senha"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                placeholderTextColor={colors.text.tertiary}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeIcon}>{showPassword ? '●' : '○'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           <Button
             title={loading ? 'Entrando...' : 'Entrar'}
@@ -131,6 +152,18 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    padding: spacing.sm,
+  },
+  backButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.secondary,
   },
   logoContainer: {
     marginBottom: spacing.md,
@@ -139,17 +172,8 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.gradients.primary[0],
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.shadow.medium,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   logoText: {
     fontSize: 40,
@@ -160,6 +184,43 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     color: colors.text.primary,
     marginBottom: spacing.sm,
+  },
+  inputContainer: {
+    marginBottom: spacing.lg,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.inputPadding,
+    fontSize: 16,
+    backgroundColor: colors.background.tertiary,
+    color: colors.text.primary,
+  },
+  passwordInputContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 50, // Espaço para o ícone do olho
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+    padding: 8,
+  },
+  eyeIcon: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: colors.text.secondary,
   },
   subtitle: {
     fontSize: 16,

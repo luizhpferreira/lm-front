@@ -23,6 +23,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
   const [passwordRepeat, setPasswordRepeat] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordRepeat, setShowPasswordRepeat] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
 
@@ -177,6 +179,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     return { strength: validChecks, color: '#27ae60', text: 'Forte' };
   };
 
+  // Validações em tempo real
+  const passwordChecks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+
   const passwordStrength = getPasswordStrength();
 
   return (
@@ -186,13 +197,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>⚡</Text>
-            </View>
-          </View>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          
           <Text style={styles.title}>Criar Conta</Text>
-          <Text style={styles.subtitle}>Crie sua carteira Lightning</Text>
         </View>
 
         <View style={styles.form}>
@@ -226,14 +238,73 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Senha</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Digite sua senha"
-              secureTextEntry
-              autoCapitalize="none"
-            />
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Digite sua senha"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeIcon}>{showPassword ? '●' : '○'}</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Validações em tempo real */}
+            {password.length > 0 && (
+              <View style={styles.validationChecks}>
+                <View style={styles.checkItem}>
+                  <Text style={[styles.checkIcon, passwordChecks.length && styles.checkIconSuccess]}>
+                    {passwordChecks.length ? '✅' : '⭕'}
+                  </Text>
+                  <Text style={[styles.checkText, passwordChecks.length && styles.checkTextSuccess]}>
+                    Mínimo 8 caracteres
+                  </Text>
+                </View>
+                
+                <View style={styles.checkItem}>
+                  <Text style={[styles.checkIcon, passwordChecks.uppercase && styles.checkIconSuccess]}>
+                    {passwordChecks.uppercase ? '✅' : '⭕'}
+                  </Text>
+                  <Text style={[styles.checkText, passwordChecks.uppercase && styles.checkTextSuccess]}>
+                    Uma letra maiúscula
+                  </Text>
+                </View>
+                
+                <View style={styles.checkItem}>
+                  <Text style={[styles.checkIcon, passwordChecks.lowercase && styles.checkIconSuccess]}>
+                    {passwordChecks.lowercase ? '✅' : '⭕'}
+                  </Text>
+                  <Text style={[styles.checkText, passwordChecks.lowercase && styles.checkTextSuccess]}>
+                    Uma letra minúscula
+                  </Text>
+                </View>
+                
+                <View style={styles.checkItem}>
+                  <Text style={[styles.checkIcon, passwordChecks.number && styles.checkIconSuccess]}>
+                    {passwordChecks.number ? '✅' : '⭕'}
+                  </Text>
+                  <Text style={[styles.checkText, passwordChecks.number && styles.checkTextSuccess]}>
+                    Um número
+                  </Text>
+                </View>
+                
+                <View style={styles.checkItem}>
+                  <Text style={[styles.checkIcon, passwordChecks.special && styles.checkIconSuccess]}>
+                    {passwordChecks.special ? '✅' : '⭕'}
+                  </Text>
+                  <Text style={[styles.checkText, passwordChecks.special && styles.checkTextSuccess]}>
+                    Um caractere especial
+                  </Text>
+                </View>
+              </View>
+            )}
+            
             {password.length > 0 && (
               <View style={styles.passwordStrength}>
                 <View style={styles.strengthBar}>
@@ -260,17 +331,26 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirmar Senha</Text>
-            <TextInput
-              style={[
-                styles.input,
-                passwordRepeat && password !== passwordRepeat && styles.inputError
-              ]}
-              value={passwordRepeat}
-              onChangeText={setPasswordRepeat}
-              placeholder="Confirme sua senha"
-              secureTextEntry
-              autoCapitalize="none"
-            />
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.passwordInput,
+                  passwordRepeat && password !== passwordRepeat && styles.inputError
+                ]}
+                value={passwordRepeat}
+                onChangeText={setPasswordRepeat}
+                placeholder="Confirme sua senha"
+                secureTextEntry={!showPasswordRepeat}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPasswordRepeat(!showPasswordRepeat)}
+              >
+                <Text style={styles.eyeIcon}>{showPasswordRepeat ? '●' : '○'}</Text>
+              </TouchableOpacity>
+            </View>
             {passwordRepeat && password !== passwordRepeat && (
               <Text style={styles.errorText}>As senhas não coincidem</Text>
             )}
@@ -312,28 +392,18 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
+    position: 'relative',
   },
-  logoContainer: {
-    marginBottom: spacing.md,
+  backButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    padding: spacing.sm,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.gradients.primary[0],
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: colors.shadow.medium,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  logoText: {
-    fontSize: 40,
+  backButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text.secondary,
   },
   title: {
     fontSize: 32,
@@ -341,13 +411,6 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     color: colors.text.primary,
     marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: '400',
-    lineHeight: 24,
-    color: colors.text.secondary,
-    textAlign: 'center',
   },
   form: {
     backgroundColor: colors.background.secondary,
@@ -381,6 +444,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.tertiary,
     color: colors.text.primary,
   },
+  passwordInputContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 50, // Espaço para o ícone do olho
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+    padding: 8,
+  },
+  eyeIcon: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: colors.text.secondary,
+  },
   inputError: {
     borderColor: colors.error.main,
   },
@@ -401,6 +482,32 @@ const styles = StyleSheet.create({
     color: colors.info.main,
     fontSize: 12,
     marginTop: 4,
+  },
+  validationChecks: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: spacing.borderRadius.sm,
+  },
+  checkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  checkIcon: {
+    fontSize: 16,
+    marginRight: spacing.sm,
+  },
+  checkIconSuccess: {
+    color: colors.success.main,
+  },
+  checkText: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+  checkTextSuccess: {
+    color: colors.text.primary,
+    fontWeight: '600',
   },
   passwordStrength: {
     flexDirection: 'row',

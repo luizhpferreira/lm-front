@@ -129,6 +129,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+
+
         {/* Modal de Pagamento */}
         <Modal
           visible={showPayModal}
@@ -460,5 +462,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+
 
 });
