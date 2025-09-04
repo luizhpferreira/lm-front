@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService, WalletData, WalletBalanceData } from '../services/api';
 import { colors, spacing, typography } from '../theme';
@@ -59,7 +60,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
@@ -178,7 +179,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
       </ScrollView>
 
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -191,8 +192,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16, // Padding fixo menor para iPhone
-    paddingVertical: 12, // Padding vertical reduzido
+    paddingHorizontal: 16,
+    paddingTop: 28, // Aumentado para dar espaço para o botão de voltar
+    paddingBottom: 20, // Mantido para proporção
     backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,

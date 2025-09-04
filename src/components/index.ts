@@ -3,3 +3,4 @@ export { Input } from './Input';
 export { Card } from './Card';
 export { ResponsiveCard } from './ResponsiveCard';
 export { ResponsiveContainer } from './ResponsiveContainer';
+export { BackButton } from './BackButton';

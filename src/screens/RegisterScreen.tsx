@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { colors, spacing, typography } from '../theme';
+import { BackButton } from '../components';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -197,12 +198,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
+          <BackButton onPress={() => navigation.goBack()} />
           
           <Text style={styles.title}>Criar Conta</Text>
         </View>
@@ -393,18 +389,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
     position: 'relative',
+    paddingTop: 28, // Aumentado para dar espaço para o botão de voltar
   },
-  backButton: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    padding: spacing.sm,
-  },
-  backButtonText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
+
+
   title: {
     fontSize: 32,
     fontWeight: '700',

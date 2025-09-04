@@ -97,6 +97,8 @@ class ApiService {
   //private baseURL: string = 'http://192.168.0.12:8080'; // URL local para iOS (IP da máquina)
 
   constructor() {
+    console.log('DEBUG: ApiService constructor - baseURL:', this.baseURL);
+    
     this.api = axios.create({
       baseURL: this.baseURL,
       timeout: 10000,
