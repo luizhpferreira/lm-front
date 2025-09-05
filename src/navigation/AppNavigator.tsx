@@ -17,6 +17,8 @@ import { BitcoinScreen } from '../screens/BitcoinScreen';
 import { CreateWalletScreen } from '../screens/CreateWalletScreen';
 import { RestoreWalletScreen } from '../screens/RestoreWalletScreen';
 import { WalletHomeScreen } from '../screens/WalletHomeScreen';
+import { ReceiveBitcoinScreen } from '../screens/ReceiveBitcoinScreen';
+import { SendBitcoinScreen } from '../screens/SendBitcoinScreen';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
 const Stack = createStackNavigator();
@@ -81,6 +83,8 @@ export const AppNavigator = () => {
             <Stack.Screen name="CreateWallet" component={CreateWalletScreen} />
             <Stack.Screen name="RestoreWallet" component={RestoreWalletScreen} />
             <Stack.Screen name="WalletHome" component={WalletHomeScreen} />
+            <Stack.Screen name="ReceiveBitcoin" component={ReceiveBitcoinScreen} />
+            <Stack.Screen name="SendBitcoin" component={SendBitcoinScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
