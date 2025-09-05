@@ -70,6 +70,16 @@ export interface FeeEstimateResponse {
   size: number;
 }
 
+export interface BroadcastRequest {
+  raw_transaction: string;
+}
+
+export interface BroadcastResponse {
+  txid: string;
+  success: boolean;
+  message?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -80,10 +90,12 @@ export interface ApiResponse<T> {
 class BitcoinApiService {
   private api: AxiosInstance;
   private baseURL: string;
+  private apiKey: string;
 
   constructor() {
-    // Usar o IP da máquina para o iPhone conseguir acessar
-    this.baseURL = 'http://192.168.0.2:8082';
+    // Usar o domínio do Cloudflare Tunnel
+    this.baseURL = 'https://naocustodial.com.br';
+    this.apiKey = 'btc_live_2024_secure_key_123'; // API Key para o BFF Bitcoin
     console.log('BitcoinApiService: Conectando ao backend em:', this.baseURL);
     
     this.api = axios.create({
@@ -91,6 +103,7 @@ class BitcoinApiService {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
+        'X-API-Key': this.apiKey, // Adicionar API Key em todas as requisições
       },
     });
 
@@ -145,7 +158,9 @@ class BitcoinApiService {
    */
   async getUTXOs(address: string): Promise<UTXOResponse> {
     try {
+      console.log('🔍 Buscando UTXOs para endereço:', address);
       const response = await this.api.get<ApiResponse<UTXOResponse>>(`/api/v1/bitcoin/utxos/${address}`);
+      console.log('✅ Resposta dos UTXOs:', response.data);
       
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to fetch UTXOs');
@@ -153,7 +168,7 @@ class BitcoinApiService {
 
       return response.data.data!;
     } catch (error: any) {
-      console.error('Error fetching UTXOs:', error);
+      console.error('❌ Erro ao buscar UTXOs:', error);
       throw new Error('Falha ao obter UTXOs do endereço');
     }
   }
@@ -163,7 +178,9 @@ class BitcoinApiService {
    */
   async getBalance(address: string): Promise<BalanceResponse> {
     try {
+      console.log('🔍 Buscando saldo para endereço:', address);
       const response = await this.api.get<ApiResponse<BalanceResponse>>(`/api/v1/bitcoin/balance/${address}`);
+      console.log('✅ Resposta do saldo:', response.data);
       
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to fetch balance');
@@ -171,7 +188,7 @@ class BitcoinApiService {
 
       return response.data.data!;
     } catch (error: any) {
-      console.error('Error fetching balance:', error);
+      console.error('❌ Erro ao buscar saldo:', error);
       throw new Error('Falha ao obter saldo do endereço');
     }
   }
@@ -253,6 +270,28 @@ class BitcoinApiService {
     } catch (error) {
       console.error('Backend health check failed:', error);
       return false;
+    }
+  }
+
+  /**
+   * Transmite uma transação raw para a rede Bitcoin
+   */
+  async broadcastTransaction(rawTransaction: string): Promise<BroadcastResponse> {
+    try {
+      const request: BroadcastRequest = { raw_transaction: rawTransaction };
+      const response = await this.api.post<ApiResponse<BroadcastResponse>>(
+        '/api/v1/bitcoin/broadcast',
+        request
+      );
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to broadcast transaction');
+      }
+
+      return response.data.data!;
+    } catch (error: any) {
+      console.error('Error broadcasting transaction:', error);
+      throw new Error('Falha ao transmitir transação para a rede');
     }
   }
 }

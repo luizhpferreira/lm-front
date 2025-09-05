@@ -104,12 +104,12 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
           <View style={styles.addressesContainer}>
             <Text style={styles.addressesTitle}>Seus Endereços Bitcoin</Text>
             <View style={styles.addressItem}>
-              <Text style={styles.addressLabel}>Bech32 (Recomendado):</Text>
-              <Text style={styles.addressText}>{wallet.addresses.p2wpkh}</Text>
+              <Text style={styles.addressLabel}>Legacy (Recomendado):</Text>
+              <Text style={styles.addressText}>{wallet.addresses.p2pkh}</Text>
             </View>
             <View style={styles.addressItem}>
-              <Text style={styles.addressLabel}>Legacy:</Text>
-              <Text style={styles.addressText}>{wallet.addresses.p2pkh}</Text>
+              <Text style={styles.addressLabel}>Bech32:</Text>
+              <Text style={styles.addressText}>{wallet.addresses.p2wpkh}</Text>
             </View>
             <View style={styles.addressItem}>
               <Text style={styles.addressLabel}>SegWit:</Text>

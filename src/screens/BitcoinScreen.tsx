@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
+import { bitcoinApiService } from '../services/bitcoinApiService';
 
 interface BitcoinScreenProps {
   navigation: any;
@@ -58,6 +59,39 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
     navigation.navigate('Login');
   };
 
+  const handleDeleteWallet = () => {
+    Alert.alert(
+      'Deletar Carteira',
+      'Tem certeza que deseja deletar sua carteira atual? Esta ação não pode ser desfeita.\n\nCertifique-se de ter anotado seu mnemônico antes de continuar.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Deletar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await bitcoinService.deleteWallet();
+              setHasWallet(false);
+              Alert.alert('Sucesso', 'Carteira deletada com sucesso!');
+            } catch (error) {
+              console.error('Erro ao deletar carteira:', error);
+              Alert.alert('Erro', 'Falha ao deletar carteira');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+
+
+
+
+
+
   if (isChecking) {
     return (
       <View style={styles.container}>
@@ -95,13 +129,23 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
         {/* Opções de carteira */}
         <View style={styles.walletOptions}>
           {hasWallet ? (
-            <TouchableOpacity
-              style={styles.primaryOption}
-              onPress={handleOpenWallet}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.primaryOptionText}>Abrir Carteira</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles.primaryOption}
+                onPress={handleOpenWallet}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.primaryOptionText}>Abrir Carteira</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.secondaryOption, { marginTop: 10, backgroundColor: '#e74c3c' }]}
+                onPress={handleDeleteWallet}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.secondaryOptionText, { color: 'white' }]}>🗑️ Deletar Carteira</Text>
+              </TouchableOpacity>
+            </>
           ) : (
             <>
               <TouchableOpacity
@@ -122,6 +166,7 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
             </>
           )}
         </View>
+
       </View>
 
       {/* Botões na parte inferior */}

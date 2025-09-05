@@ -68,8 +68,24 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       const loadedWallet = await bitcoinService.loadWallet();
       if (loadedWallet) {
         setWallet(loadedWallet);
-        // Simular saldo para demonstração
-        setBalance(0.001); // 0.001 BTC = 100,000 sats
+        
+        // Obter saldo real da carteira (usar Legacy por padrão)
+        const walletAddress = loadedWallet.addresses.p2pkh || loadedWallet.addresses.p2wpkh;
+        if (walletAddress && backendAvailable) {
+          try {
+            console.log('🔍 Obtendo saldo real da carteira...');
+            const balanceData = await bitcoinService.getAddressBalance(walletAddress);
+            const balanceInBTC = balanceData.balance / 100000000; // Converter sats para BTC
+            setBalance(balanceInBTC);
+            console.log('✅ Saldo real carregado:', balanceInBTC, 'BTC');
+          } catch (error) {
+            console.log('⚠️ Usando saldo simulado (erro ao obter saldo real):', error);
+            setBalance(0.001); // Fallback para saldo simulado
+          }
+        } else {
+          console.log('⚠️ Usando saldo simulado (backend não disponível ou endereço não encontrado)');
+          setBalance(0.001); // Fallback para saldo simulado
+        }
       } else {
         Alert.alert('Erro', 'Carteira não encontrada');
         navigation.goBack();
@@ -197,23 +213,91 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
 
     setSending(true);
     try {
-      // Aqui seria implementada a lógica real de envio
-      // Por enquanto, apenas simular o envio
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('🚀 Enviando transação Bitcoin...');
+      
+      // Obter endereço da carteira
+      const fromAddress = wallet?.addresses.p2pkh || wallet?.addresses.p2wpkh;
+      if (!fromAddress) {
+        throw new Error('Endereço da carteira não encontrado');
+      }
+
+      // Converter valor para satoshis
+      const amountInSats = amountUnit === 'BTC' 
+        ? Math.round(parseFloat(amount) * 100000000)
+        : Math.round(parseFloat(amount));
+      
+      // Obter taxa selecionada (usar taxas reais se disponíveis)
+      let feeRateValue = 10; // Default
+      if (networkFees) {
+        switch (feeRate) {
+          case 'fast':
+            feeRateValue = networkFees.fastest_fee || 20;
+            break;
+          case 'medium':
+            feeRateValue = networkFees.hour_fee || 10;
+            break;
+          case 'slow':
+            feeRateValue = networkFees.economy_fee || 5;
+            break;
+        }
+      } else {
+        // Fallback para taxas fixas
+        feeRateValue = feeRate === 'fast' ? 20 : feeRate === 'medium' ? 10 : 5;
+      }
+      
+      console.log('📊 Dados da transação:', {
+        from: fromAddress,
+        to: recipientAddress,
+        amount: amountInSats,
+        amountUnit,
+        feeRate: feeRateValue,
+        networkFees: networkFees ? 'Usando taxas reais' : 'Usando taxas fixas'
+      });
+
+      // Verificar se há saldo suficiente
+      const currentBalanceInSats = Math.round(balance * 100000000);
+      if (amountInSats > currentBalanceInSats) {
+        throw new Error(`Saldo insuficiente. Disponível: ${formatAmount(currentBalanceInSats)}, Solicitado: ${formatAmount(amountInSats)}`);
+      }
+
+      // Enviar transação usando o serviço
+      const txid = await bitcoinService.sendTransaction(
+        fromAddress,
+        recipientAddress,
+        amountInSats,
+        feeRateValue
+      );
+      
+      console.log('✅ Transação enviada com sucesso:', txid);
       
       Alert.alert(
-        'Sucesso',
-        'Transação enviada com sucesso!\n\nEm produção, a transação seria assinada e transmitida para a rede Bitcoin.',
+        'Sucesso!',
+        `Transação enviada com sucesso!\n\nTXID: ${txid}\n\nA transação foi transmitida para a rede Bitcoin e será confirmada em breve.`,
         [
           {
             text: 'OK',
-            onPress: () => navigation.goBack(),
+            onPress: () => {
+              // Recarregar saldo após transação
+              loadWallet();
+              navigation.goBack();
+            },
           },
         ]
       );
-    } catch (error) {
-      console.error('Erro ao enviar transação:', error);
-      Alert.alert('Erro', 'Falha ao enviar transação');
+    } catch (error: any) {
+      console.error('❌ Erro ao enviar transação:', error);
+      
+      // Tratar erros específicos
+      let errorMessage = error.message;
+      if (error.message.includes('inputs-missingorspent')) {
+        errorMessage = 'UTXO já foi gasto. Tente novamente em alguns segundos.';
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = 'Saldo insuficiente para esta transação.';
+      } else if (error.message.includes('bad-txns')) {
+        errorMessage = 'Erro na estrutura da transação. Tente novamente.';
+      }
+      
+      Alert.alert('Erro', `Falha ao enviar transação:\n\n${errorMessage}`);
     } finally {
       setSending(false);
     }

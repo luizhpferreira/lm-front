@@ -22,7 +22,7 @@ interface ReceiveBitcoinScreenProps {
 export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navigation, route }) => {
   const [wallet, setWallet] = useState<BitcoinWallet | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedAddressType, setSelectedAddressType] = useState<'p2pkh' | 'p2sh' | 'p2wpkh'>('p2wpkh');
+  const [selectedAddressType, setSelectedAddressType] = useState<'p2pkh' | 'p2sh' | 'p2wpkh'>('p2pkh');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
 

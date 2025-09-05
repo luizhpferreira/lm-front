@@ -34,8 +34,8 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
       setBackendAvailable(isAvailable);
       
       if (isAvailable && wallet) {
-        // Carregar saldo real do backend
-        const addressBalance = await bitcoinService.getAddressBalance(wallet.addresses.p2wpkh);
+        // Carregar saldo real do backend (usar Legacy por padrão)
+        const addressBalance = await bitcoinService.getAddressBalance(wallet.addresses.p2pkh);
         setBalance(addressBalance.balance / 100000000); // Converter de sats para BTC
         console.log('Saldo real carregado:', addressBalance.balance, 'sats');
       }
@@ -208,12 +208,12 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Endereço Principal:</Text>
             <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="middle">
-              {wallet.addresses.p2wpkh}
+              {wallet.addresses.p2pkh}
             </Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Tipo:</Text>
-            <Text style={styles.infoValue}>Bech32 (P2WPKH)</Text>
+            <Text style={styles.infoValue}>Legacy (P2PKH)</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Rede:</Text>
