@@ -22,25 +22,41 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [backendAvailable, setBackendAvailable] = useState(false);
+  const [balanceUnit, setBalanceUnit] = useState<'sats' | 'BTC'>('sats');
 
   useEffect(() => {
     loadWallet();
-    checkBackendAndLoadBalance();
   }, []);
+
+  useEffect(() => {
+    if (wallet) {
+      checkBackendAndLoadBalance();
+    }
+  }, [wallet]);
 
   const checkBackendAndLoadBalance = async () => {
     try {
+      console.log('🔍 Verificando disponibilidade do backend...');
       const isAvailable = await bitcoinService.isBackendAvailable();
+      console.log('✅ Backend disponível:', isAvailable);
       setBackendAvailable(isAvailable);
       
       if (isAvailable && wallet) {
+        console.log('🔍 Carregando saldo para endereço:', wallet.addresses.p2pkh);
         // Carregar saldo real do backend (usar Legacy por padrão)
         const addressBalance = await bitcoinService.getAddressBalance(wallet.addresses.p2pkh);
-        setBalance(addressBalance.balance / 100000000); // Converter de sats para BTC
-        console.log('Saldo real carregado:', addressBalance.balance, 'sats');
+        console.log('✅ Resposta do saldo:', addressBalance);
+        const balanceInBTC = addressBalance.balance / 100000000;
+        console.log('💰 Saldo convertido para BTC:', balanceInBTC);
+        setBalance(balanceInBTC);
+        console.log('✅ Saldo real carregado:', addressBalance.balance, 'sats');
+      } else {
+        console.log('⚠️ Backend não disponível ou carteira não carregada');
+        console.log('Backend disponível:', isAvailable);
+        console.log('Carteira carregada:', !!wallet);
       }
     } catch (error) {
-      console.error('Erro ao carregar saldo do backend:', error);
+      console.error('❌ Erro ao carregar saldo do backend:', error);
     }
   };
 
@@ -77,11 +93,8 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   };
 
   const loadBalance = async () => {
-    // Simular carregamento de saldo
-    // Em produção, isso viria do backend via API
-    setTimeout(() => {
-      setBalance(0); // Saldo inicial sempre 0 para nova carteira
-    }, 1000);
+    // Não fazer nada - o saldo real vem do checkBackendAndLoadBalance
+    // Esta função era para simulação, mas agora usamos dados reais
   };
 
   const handleRefresh = async () => {
@@ -101,6 +114,18 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
   const handleSettings = () => {
     navigation.navigate('WalletSettings', { wallet });
+  };
+
+  const toggleBalanceUnit = () => {
+    setBalanceUnit(prev => prev === 'sats' ? 'BTC' : 'sats');
+  };
+
+  const formatBalance = () => {
+    if (balanceUnit === 'sats') {
+      return bitcoinService.formatSatoshis(balance * 100000000);
+    } else {
+      return `${balance.toFixed(8)} BTC`;
+    }
   };
 
   const handleBackup = () => {
@@ -160,9 +185,14 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
         {/* Balance Card */}
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Saldo Total</Text>
-          <Text style={styles.balanceAmount}>
-            {bitcoinService.formatSatoshis(balance)}
-          </Text>
+          <View style={styles.balanceRow}>
+            <Text style={styles.balanceAmount}>
+              {formatBalance()}
+            </Text>
+            <TouchableOpacity style={styles.unitToggle} onPress={toggleBalanceUnit}>
+              <Text style={styles.unitToggleText}>⇅</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.balanceSubtext}>
             {balance === 0 ? 'Carteira vazia - Receba seu primeiro Bitcoin!' : 'Atualizado agora'}
           </Text>
@@ -315,16 +345,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.light,
   },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  unitToggle: {
+    marginLeft: spacing.sm,
+    padding: spacing.xs,
+  },
+  unitToggleText: {
+    color: colors.text.secondary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
   balanceLabel: {
     fontSize: 16,
     color: colors.text.secondary,
-    marginBottom: spacing.sm,
   },
   balanceAmount: {
     fontSize: 32,
     fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: spacing.sm,
   },
   balanceSubtext: {
     fontSize: 14,
