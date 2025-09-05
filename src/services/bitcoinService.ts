@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import { HDKey } from '@scure/bip32';
+import { bitcoinApiService, UTXO, BalanceResponse, FeeResponse } from './bitcoinApiService';
 
 // Configuração da rede Bitcoin mainnet
 const NETWORK = {
@@ -32,21 +33,9 @@ export interface BitcoinWallet {
   };
 }
 
-export interface UTXO {
-  txid: string;
-  vout: number;
-  value: number;
-  scriptPubKey: string;
-  address: string;
-}
 
-export interface BitcoinBalance {
-  address: string;
-  balance: number; // em satoshis
+export interface BitcoinBalance extends BalanceResponse {
   utxos: UTXO[];
-  totalReceived: number;
-  totalSent: number;
-  txCount: number;
 }
 
 class BitcoinService {
@@ -332,6 +321,101 @@ class BitcoinService {
       return `${(satoshis / 100000000).toFixed(8)} BTC`;
     } else {
       return `${satoshis.toLocaleString()} sats`;
+    }
+  }
+
+  /**
+   * Obtém o saldo de um endereço do backend
+   */
+  async getAddressBalance(address: string): Promise<BitcoinBalance> {
+    try {
+      const [balanceResponse, utxosResponse] = await Promise.all([
+        bitcoinApiService.getBalance(address),
+        bitcoinApiService.getUTXOs(address),
+      ]);
+
+      return {
+        ...balanceResponse,
+        utxos: utxosResponse.utxos,
+      };
+    } catch (error) {
+      console.error('Erro ao obter saldo do endereço:', error);
+      throw new Error('Falha ao obter saldo do endereço');
+    }
+  }
+
+  /**
+   * Obtém UTXOs de um endereço do backend
+   */
+  async getAddressUTXOs(address: string): Promise<UTXO[]> {
+    try {
+      const response = await bitcoinApiService.getUTXOs(address);
+      return response.utxos;
+    } catch (error) {
+      console.error('Erro ao obter UTXOs:', error);
+      throw new Error('Falha ao obter UTXOs do endereço');
+    }
+  }
+
+  /**
+   * Obtém taxas da rede do backend
+   */
+  async getNetworkFees(): Promise<FeeResponse> {
+    try {
+      return await bitcoinApiService.getFees();
+    } catch (error) {
+      console.error('Erro ao obter taxas da rede:', error);
+      throw new Error('Falha ao obter taxas da rede');
+    }
+  }
+
+  /**
+   * Obtém taxas recomendadas do backend
+   */
+  async getRecommendedFees(): Promise<FeeResponse> {
+    try {
+      return await bitcoinApiService.getRecommendedFees();
+    } catch (error) {
+      console.error('Erro ao obter taxas recomendadas:', error);
+      throw new Error('Falha ao obter taxas recomendadas');
+    }
+  }
+
+  /**
+   * Valida endereço usando o backend
+   */
+  async validateAddressWithBackend(address: string): Promise<boolean> {
+    try {
+      const response = await bitcoinApiService.validateAddress(address);
+      return response.valid;
+    } catch (error) {
+      console.error('Erro ao validar endereço:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Estima taxa de transação usando o backend
+   */
+  async estimateTransactionFee(inputs: number, outputs: number, feeRate?: number): Promise<number> {
+    try {
+      const response = await bitcoinApiService.estimateFee(inputs, outputs, feeRate);
+      return response.estimated_fee;
+    } catch (error) {
+      console.error('Erro ao estimar taxa:', error);
+      throw new Error('Falha ao estimar taxa da transação');
+    }
+  }
+
+  /**
+   * Verifica se o backend está disponível
+   */
+  async isBackendAvailable(): Promise<boolean> {
+    try {
+      return await bitcoinApiService.healthCheck();
+    } catch (error) {
+      console.error('Backend não disponível:', error);
+      return false;
     }
   }
 }

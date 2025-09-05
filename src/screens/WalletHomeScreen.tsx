@@ -21,10 +21,28 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const [balance, setBalance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [backendAvailable, setBackendAvailable] = useState(false);
 
   useEffect(() => {
     loadWallet();
+    checkBackendAndLoadBalance();
   }, []);
+
+  const checkBackendAndLoadBalance = async () => {
+    try {
+      const isAvailable = await bitcoinService.isBackendAvailable();
+      setBackendAvailable(isAvailable);
+      
+      if (isAvailable && wallet) {
+        // Carregar saldo real do backend
+        const addressBalance = await bitcoinService.getAddressBalance(wallet.addresses.p2wpkh);
+        setBalance(addressBalance.balance / 100000000); // Converter de sats para BTC
+        console.log('Saldo real carregado:', addressBalance.balance, 'sats');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar saldo do backend:', error);
+    }
+  };
 
   const loadWallet = async () => {
     try {
@@ -69,6 +87,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadBalance();
+    await checkBackendAndLoadBalance();
     setIsRefreshing(false);
   };
 

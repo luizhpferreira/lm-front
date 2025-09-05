@@ -34,10 +34,34 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
   const [estimatedFee, setEstimatedFee] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [balance, setBalance] = useState(0);
+  const [networkFees, setNetworkFees] = useState<any>(null);
+  const [backendAvailable, setBackendAvailable] = useState(false);
 
   useEffect(() => {
     loadWallet();
+    checkBackendAndLoadFees();
   }, []);
+
+  const checkBackendAndLoadFees = async () => {
+    try {
+      const isAvailable = await bitcoinService.isBackendAvailable();
+      setBackendAvailable(isAvailable);
+      console.log('Backend disponível:', isAvailable);
+      
+      if (isAvailable) {
+        const fees = await bitcoinService.getNetworkFees();
+        setNetworkFees(fees);
+        console.log('Taxas da rede carregadas:', fees);
+        console.log('Taxas detalhadas:', {
+          economy: fees.economy_fee,
+          hour: fees.hour_fee,
+          fastest: fees.fastest_fee
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar taxas da rede:', error);
+    }
+  };
 
   const loadWallet = async () => {
     try {
@@ -72,16 +96,35 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
   };
 
   const calculateFee = (amountInSats: number): number => {
-    // Taxa estimada baseada no tamanho da transação
-    // Transação típica: ~250 bytes
+    // Se temos taxas reais do backend, usar elas
+    if (networkFees) {
+      const feeRates = {
+        slow: networkFees.economy_fee || 1,
+        medium: networkFees.hour_fee || 5,
+        fast: networkFees.fastest_fee || 10,
+      };
+      
+      // Transação típica: ~250 bytes
+      const txSize = 250;
+      const selectedRate = feeRates[feeRate as keyof typeof feeRates];
+      const calculatedFee = txSize * selectedRate;
+      
+      console.log(`Calculando taxa: ${feeRate} = ${selectedRate} sat/byte × ${txSize} bytes = ${calculatedFee} sats`);
+      return calculatedFee;
+    }
+    
+    // Fallback para taxas estimadas
     const txSize = 250;
-    const feeRates = {
+    const fallbackRates = {
       slow: 1,    // 1 sat/byte
       medium: 5,  // 5 sat/byte
       fast: 10,   // 10 sat/byte
     };
     
-    return txSize * feeRates[feeRate as keyof typeof feeRates];
+    const selectedRate = fallbackRates[feeRate as keyof typeof fallbackRates];
+    const calculatedFee = txSize * selectedRate;
+    console.log(`Usando taxa fallback: ${feeRate} = ${selectedRate} sat/byte × ${txSize} bytes = ${calculatedFee} sats`);
+    return calculatedFee;
   };
 
   const updateCalculations = () => {
@@ -103,15 +146,30 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
     updateCalculations();
   }, [amount, amountUnit, feeRate]);
 
-  const validateForm = (): boolean => {
+  const validateForm = async (): Promise<boolean> => {
     if (!recipientAddress.trim()) {
       Alert.alert('Erro', 'Por favor, informe o endereço do destinatário');
       return false;
     }
 
+    // Validar endereço localmente primeiro
     if (!bitcoinService.validateAddress(recipientAddress)) {
       Alert.alert('Erro', 'Endereço Bitcoin inválido');
       return false;
+    }
+
+    // Se o backend estiver disponível, validar também lá
+    if (backendAvailable) {
+      try {
+        const isValid = await bitcoinService.validateAddressWithBackend(recipientAddress);
+        if (!isValid) {
+          Alert.alert('Erro', 'Endereço Bitcoin inválido');
+          return false;
+        }
+      } catch (error) {
+        console.error('Erro na validação do backend:', error);
+        // Continuar com validação local se o backend falhar
+      }
     }
 
     if (!amount.trim()) {
@@ -135,7 +193,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
   };
 
   const handleSend = async () => {
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
 
     setSending(true);
     try {
@@ -207,6 +265,14 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
         <View style={styles.balanceContainer}>
           <Text style={styles.balanceLabel}>Saldo Disponível</Text>
           <Text style={styles.balanceAmount}>{formatAmount(convertAmount(balance.toString(), 'BTC', 'sats'))}</Text>
+          
+          {/* Backend Status */}
+          <View style={styles.backendStatusContainer}>
+            <View style={[styles.statusDot, { backgroundColor: backendAvailable ? '#4CAF50' : '#F44336' }]} />
+            <Text style={styles.statusText}>
+              {backendAvailable ? 'Conectado à rede Bitcoin' : 'Modo offline'}
+            </Text>
+          </View>
         </View>
 
         {/* Recipient Address */}
@@ -247,25 +313,52 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Taxa de Rede</Text>
           <View style={styles.feeRateContainer}>
-            {(['slow', 'medium', 'fast'] as const).map((rate) => (
-              <TouchableOpacity
-                key={rate}
-                style={[
-                  styles.feeRateButton,
-                  feeRate === rate && styles.feeRateButtonSelected,
-                ]}
-                onPress={() => setFeeRate(rate)}
-              >
-                <Text
+            {(['slow', 'medium', 'fast'] as const).map((rate) => {
+              const getFeeRate = () => {
+                if (networkFees) {
+                  switch (rate) {
+                    case 'slow': return networkFees.economy_fee || 1;
+                    case 'medium': return networkFees.hour_fee || 5;
+                    case 'fast': return networkFees.fastest_fee || 10;
+                    default: return 1;
+                  }
+                }
+                return rate === 'slow' ? 1 : rate === 'medium' ? 5 : 10;
+              };
+              
+              const currentFeeRate = getFeeRate();
+              
+              return (
+                <TouchableOpacity
+                  key={rate}
                   style={[
-                    styles.feeRateText,
-                    feeRate === rate && styles.feeRateTextSelected,
+                    styles.feeRateButton,
+                    feeRate === rate && styles.feeRateButtonSelected,
                   ]}
+                  onPress={() => {
+                    console.log(`Selecionando taxa ${rate}: ${currentFeeRate} sat/byte`);
+                    setFeeRate(rate);
+                  }}
                 >
-                  {rate === 'slow' ? 'Lenta' : rate === 'medium' ? 'Média' : 'Rápida'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.feeRateText,
+                      feeRate === rate && styles.feeRateTextSelected,
+                    ]}
+                  >
+                    {rate === 'slow' ? 'Lenta' : rate === 'medium' ? 'Média' : 'Rápida'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.feeRateSubtext,
+                      feeRate === rate && styles.feeRateSubtextSelected,
+                    ]}
+                  >
+                    {currentFeeRate} sat/byte
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -321,7 +414,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
 
         {/* Warning */}
         <View style={styles.warningContainer}>
-          <Ionicons name="warning-outline" size={20} color={colors.warning} />
+          <Ionicons name="warning-outline" size={20} color={colors.warning.main} />
           <Text style={styles.warningText}>
             Verifique cuidadosamente o endereço antes de enviar. Transações Bitcoin são irreversíveis.
           </Text>
@@ -343,7 +436,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.primary,
+    borderBottomColor: colors.border.light,
   },
   backButton: {
     padding: 8,
@@ -382,7 +475,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: colors.primary,
+    color: colors.primary.main,
     fontWeight: '600',
   },
   balanceContainer: {
@@ -402,6 +495,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.primary,
   },
+  backendStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
   section: {
     marginBottom: 24,
   },
@@ -418,7 +526,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text.primary,
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
     minHeight: 50,
   },
   amountContainer: {
@@ -427,7 +535,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
   },
   amountInput: {
     flex: 1,
@@ -439,12 +547,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderLeftWidth: 1,
-    borderLeftColor: colors.border.primary,
+    borderLeftColor: colors.border.light,
   },
   unitButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.primary,
+    color: colors.primary.main,
   },
   feeRateContainer: {
     flexDirection: 'row',
@@ -456,12 +564,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
     backgroundColor: colors.background.secondary,
   },
   feeRateButtonSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
   },
   feeRateText: {
     fontSize: 14,
@@ -469,6 +577,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   feeRateTextSelected: {
+    color: colors.text.onPrimary,
+  },
+  feeRateSubtext: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  feeRateSubtextSelected: {
     color: colors.text.onPrimary,
   },
   summaryContainer: {
@@ -500,7 +617,7 @@ const styles = StyleSheet.create({
   },
   summaryTotal: {
     borderTopWidth: 1,
-    borderTopColor: colors.border.primary,
+    borderTopColor: colors.border.light,
     paddingTop: 12,
     marginTop: 8,
   },
@@ -515,7 +632,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   sendButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.main,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
