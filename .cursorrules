@@ -4,7 +4,7 @@
 - Quando for dar a resposta no chat e aparecer senha ou coisas que estiverem no meu arquivo .env nao as exponha
 - Quando for criar um user e precisar colocar password e repeat_password nao use Teste123 ou algo parecido deixe como default a senha #Ruiter1
 - Quando for fazer o compose nao use docker-compose mas sim docker compose
-
+- sempre após criar um arquivo de teste pode exclui-lo
 
 
 

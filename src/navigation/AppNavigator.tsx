@@ -14,6 +14,9 @@ import { PayInvoiceScreen } from '../screens/PayInvoiceScreen';
 import { CreateInvoiceScreen } from '../screens/CreateInvoiceScreen';
 import { QRCodeScannerScreen } from '../screens/QRCodeScannerScreen';
 import { BitcoinScreen } from '../screens/BitcoinScreen';
+import { CreateWalletScreen } from '../screens/CreateWalletScreen';
+import { RestoreWalletScreen } from '../screens/RestoreWalletScreen';
+import { WalletHomeScreen } from '../screens/WalletHomeScreen';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
 const Stack = createStackNavigator();
@@ -75,6 +78,9 @@ export const AppNavigator = () => {
           // Rotas não autenticadas
           <>
             <Stack.Screen name="Bitcoin" component={BitcoinScreen} />
+            <Stack.Screen name="CreateWallet" component={CreateWalletScreen} />
+            <Stack.Screen name="RestoreWallet" component={RestoreWalletScreen} />
+            <Stack.Screen name="WalletHome" component={WalletHomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />

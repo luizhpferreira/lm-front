@@ -11,11 +11,16 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
+    "@noble/secp256k1": "^3.0.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.4.6",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.7",
+    "@scure/bip32": "^2.0.0",
+    "@scure/bip39": "^2.0.0",
     "axios": "^1.11.0",
+    "buffer": "^6.0.3",
+    "expo": "~53.0.22",
     "expo-camera": "^16.1.11",
     "expo-clipboard": "~7.1.5",
     "expo-dev-client": "~5.2.4",
@@ -26,13 +31,13 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-get-random-values": "^1.11.0",
     "react-native-qrcode-svg": "^6.3.15",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
     "react-native-vector-icons": "^10.3.0",
-    "react-native-web": "^0.20.0",
-    "expo": "~53.0.22"
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
