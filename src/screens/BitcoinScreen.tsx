@@ -60,6 +60,7 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
     navigation.navigate('Login');
   };
 
+
   const handleDeleteWallet = () => {
     Alert.alert(
       'Deletar Carteira',

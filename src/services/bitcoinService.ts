@@ -4,7 +4,10 @@ import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from "@scure/b
 import { wordlist } from "@scure/bip39/wordlists/english";
 import { HDKey } from "@scure/bip32";
 import * as secp from "@noble/secp256k1";
+import { ripemd160 } from "@noble/hashes/legacy";
+import { sha256 } from "@noble/hashes/sha2";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { bitcoinApiService } from './bitcoinApiService';
 
 export interface BitcoinWallet {
   mnemonic: string;
@@ -80,13 +83,177 @@ export class BitcoinService {
     };
   }
 
-  // Gera endereço Bitcoin (versão simplificada)
-  private generateAddress(publicKey: Uint8Array): string {
-    // Esta é uma implementação simplificada
-    // Para produção, use bitcoinjs-lib para gerar endereços corretos
-    // Usar apenas os primeiros 20 bytes da chave pública como endereço simplificado
-    const address = Buffer.from(publicKey.slice(0, 20)).toString('hex');
-    return `1${address.slice(0, 25)}`; // Endereço Legacy simplificado
+  // Gera endereço Bitcoin real e válido
+  private generateAddress(publicKey: Uint8Array, type: 'p2pkh' | 'p2sh' | 'bech32' = 'p2pkh'): string {
+    // Gerar hash160 real (SHA256 + RIPEMD160)
+    const sha256Hash = sha256(publicKey);
+    const hash160 = ripemd160(sha256Hash);
+    
+    switch (type) {
+      case 'p2pkh':
+        return this.createP2PKHAddress(hash160);
+      case 'p2sh':
+        return this.createP2SHAddress(hash160);
+      case 'bech32':
+        return this.createBech32Address(hash160);
+      default:
+        return this.createP2PKHAddress(hash160);
+    }
+  }
+
+  // Cria endereço P2PKH (Legacy) - 1...
+  private createP2PKHAddress(hash160: Uint8Array): string {
+    // Versão 0x00 para mainnet
+    const version = new Uint8Array([0x00]);
+    const payload = new Uint8Array([...version, ...hash160]);
+    
+    // Calcular checksum (SHA256(SHA256(payload)))
+    const checksum = sha256(sha256(payload)).slice(0, 4);
+    const addressBytes = new Uint8Array([...payload, ...checksum]);
+    
+    return this.base58Encode(addressBytes);
+  }
+
+  // Cria endereço P2SH - 3...
+  private createP2SHAddress(hash160: Uint8Array): string {
+    // Versão 0x05 para P2SH mainnet
+    const version = new Uint8Array([0x05]);
+    const payload = new Uint8Array([...version, ...hash160]);
+    
+    // Calcular checksum
+    const checksum = sha256(sha256(payload)).slice(0, 4);
+    const addressBytes = new Uint8Array([...payload, ...checksum]);
+    
+    return this.base58Encode(addressBytes);
+  }
+
+  // Cria endereço Bech32 - bc1...
+  private createBech32Address(hash160: Uint8Array): string {
+    // Para simplificar, vamos usar uma implementação básica de Bech32
+    // Em produção, use uma biblioteca específica para Bech32
+    const witnessVersion = 0;
+    const program = hash160.slice(0, 20); // 20 bytes para P2WPKH
+    
+    // Implementação simplificada de Bech32
+    const hrp = "bc";
+    const data = [witnessVersion, ...this.convertBits(program, 8, 5)];
+    const checksum = this.bech32Checksum(hrp, data);
+    
+    return hrp + "1" + this.bech32Encode([...data, ...checksum]);
+  }
+
+  // Codificação Base58
+  private base58Encode(bytes: Uint8Array): string {
+    const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    
+    // Converter bytes para BigInt diretamente
+    let num = BigInt(0);
+    for (let i = 0; i < bytes.length; i++) {
+      num = num * BigInt(256) + BigInt(bytes[i]);
+    }
+    
+    let result = "";
+    while (num > BigInt(0)) {
+      result = alphabet[Number(num % BigInt(58))] + result;
+      num = num / BigInt(58);
+    }
+    
+    // Adicionar '1's para zeros à esquerda
+    for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
+      result = "1" + result;
+    }
+    
+    return result;
+  }
+
+  // Conversão de bits para Bech32
+  private convertBits(data: Uint8Array, fromBits: number, toBits: number): number[] {
+    let acc = 0;
+    let bits = 0;
+    const result = [];
+    const maxv = (1 << toBits) - 1;
+    
+    for (let i = 0; i < data.length; i++) {
+      acc = (acc << fromBits) | data[i];
+      bits += fromBits;
+      
+      while (bits >= toBits) {
+        bits -= toBits;
+        result.push((acc >> bits) & maxv);
+      }
+    }
+    
+    if (bits > 0) {
+      result.push((acc << (toBits - bits)) & maxv);
+    }
+    
+    return result;
+  }
+
+  // Checksum Bech32
+  private bech32Checksum(hrp: string, data: number[]): number[] {
+    const values = [...this.bech32HrpExpand(hrp), ...data, 0, 0, 0, 0, 0, 0];
+    const polymod = this.bech32Polymod(values) ^ 1;
+    const result = [];
+    
+    for (let i = 0; i < 6; i++) {
+      result.push((polymod >> (5 * (5 - i))) & 31);
+    }
+    
+    return result;
+  }
+
+  // Expansão HRP para Bech32
+  private bech32HrpExpand(hrp: string): number[] {
+    const result = [];
+    for (let i = 0; i < hrp.length; i++) {
+      result.push(hrp.charCodeAt(i) >> 5);
+    }
+    result.push(0);
+    for (let i = 0; i < hrp.length; i++) {
+      result.push(hrp.charCodeAt(i) & 31);
+    }
+    return result;
+  }
+
+  // Polinomio Bech32
+  private bech32Polymod(values: number[]): number {
+    const GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+    let chk = 1;
+    
+    for (let i = 0; i < values.length; i++) {
+      const b = chk >> 25;
+      chk = (chk & 0x1ffffff) << 5 ^ values[i];
+      
+      for (let j = 0; j < 5; j++) {
+        if ((b >> j) & 1) {
+          chk ^= GEN[j];
+        }
+      }
+    }
+    
+    return chk;
+  }
+
+  // Codificação Bech32
+  private bech32Encode(data: number[]): string {
+    const alphabet = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+    let result = "";
+    
+    for (let i = 0; i < data.length; i++) {
+      result += alphabet[data[i]];
+    }
+    
+    return result;
+  }
+
+  // Gera todos os tipos de endereços para uma chave
+  generateAllAddresses(publicKey: Uint8Array): { p2pkh: string; p2sh: string; bech32: string } {
+    return {
+      p2pkh: this.generateAddress(publicKey, 'p2pkh'),
+      p2sh: this.generateAddress(publicKey, 'p2sh'),
+      bech32: this.generateAddress(publicKey, 'bech32')
+    };
   }
 
   // Salva carteira no AsyncStorage
@@ -127,16 +294,14 @@ export class BitcoinService {
 
       // Gerar endereços
       const key = this.getKey();
+      const publicKey = new Uint8Array(Buffer.from(key.publicKey, 'hex'));
+      const addresses = this.generateAllAddresses(publicKey);
       
       const wallet: BitcoinWallet = {
         mnemonic: this.mnemonic!,
         seed: this.seed,
         root: this.root,
-        addresses: {
-          p2pkh: key.address,
-          p2sh: key.address, // Simplificado
-          bech32: key.address, // Simplificado
-        },
+        addresses: addresses,
       };
 
       return wallet;
@@ -160,6 +325,28 @@ export class BitcoinService {
     this.root = null;
   }
 
+  // Limpa dados corrompidos
+  async clearCorruptedData(): Promise<void> {
+    console.log('🧹 Limpando dados corrompidos...');
+    await AsyncStorage.removeItem(this.STORAGE_KEY);
+    this.mnemonic = null;
+    this.seed = null;
+    this.root = null;
+    console.log('✅ Dados corrompidos limpos');
+  }
+
+  // Força limpeza completa (inclui cache)
+  async forceCleanSlate(): Promise<void> {
+    console.log('🧹 Forçando limpeza completa...');
+    await AsyncStorage.removeItem(this.STORAGE_KEY);
+    await AsyncStorage.removeItem('bitcoin_wallet');
+    await AsyncStorage.removeItem('wallet_data');
+    this.mnemonic = null;
+    this.seed = null;
+    this.root = null;
+    console.log('✅ Limpeza completa realizada');
+  }
+
   // Gera uma nova carteira completa
   async generateWallet(): Promise<BitcoinWallet> {
     try {
@@ -174,16 +361,14 @@ export class BitcoinService {
       
       // Gerar chave principal
       const key = this.getKey();
+      const publicKey = new Uint8Array(Buffer.from(key.publicKey, 'hex'));
+      const addresses = this.generateAllAddresses(publicKey);
 
       const wallet: BitcoinWallet = {
         mnemonic,
         seed: this.seed!,
         root: this.root!,
-        addresses: {
-          p2pkh: key.address,
-          p2sh: key.address,
-          bech32: key.address,
-        },
+        addresses: addresses,
       };
 
       // Salvar carteira
@@ -210,16 +395,14 @@ export class BitcoinService {
       
       // Gerar chave principal
       const key = this.getKey();
+      const publicKey = new Uint8Array(Buffer.from(key.publicKey, 'hex'));
+      const addresses = this.generateAllAddresses(publicKey);
 
       const wallet: BitcoinWallet = {
         mnemonic,
         seed: this.seed!,
         root: this.root!,
-        addresses: {
-          p2pkh: key.address,
-          p2sh: key.address,
-          bech32: key.address,
-        },
+        addresses: addresses,
       };
 
       // Salvar carteira
@@ -240,23 +423,49 @@ export class BitcoinService {
 
   // Métodos do backend (implementações básicas)
   async isBackendAvailable(): Promise<boolean> {
-    // Implementação básica - sempre retorna true para desenvolvimento
-    return true;
+    try {
+      console.log('🔍 [DEBUG] Verificando disponibilidade do backend...');
+      await bitcoinApiService.getRecommendedFees();
+      console.log('✅ Backend disponível');
+      return true;
+    } catch (error) {
+      console.error('❌ Backend indisponível:', error);
+      return false;
+    }
   }
 
   async getAddressBalance(address: string): Promise<{ balance: number }> {
-    // Implementação básica - retorna saldo zero para desenvolvimento
-    console.log('🔍 [DEBUG] getAddressBalance chamado para:', address);
-    return { balance: 0 };
+    try {
+      console.log('🔍 [DEBUG] getAddressBalance chamado para:', address);
+      const balanceData = await bitcoinApiService.getBalance(address);
+      console.log('✅ Saldo obtido do backend naocustodial.com.br:', balanceData);
+      return { balance: balanceData.balance };
+    } catch (error) {
+      console.error('❌ Erro ao obter saldo do backend naocustodial.com.br:', error);
+      // Fallback para saldo zero em caso de erro
+      return { balance: 0 };
+    }
   }
 
   async getNetworkFees(): Promise<{ economy_fee: number; hour_fee: number; fastest_fee: number }> {
-    // Implementação básica - retorna taxas padrão
-    return {
-      economy_fee: 1,
-      hour_fee: 5,
-      fastest_fee: 10
-    };
+    try {
+      console.log('🔍 [DEBUG] Obtendo taxas do backend...');
+      const fees = await bitcoinApiService.getRecommendedFees();
+      console.log('✅ Taxas obtidas do backend:', fees);
+      return {
+        economy_fee: fees.economy_fee,
+        hour_fee: fees.hour_fee,
+        fastest_fee: fees.fastest_fee
+      };
+    } catch (error) {
+      console.error('❌ Erro ao obter taxas do backend:', error);
+      // Fallback para valores padrão
+      return {
+        economy_fee: 1,
+        hour_fee: 5,
+        fastest_fee: 10
+      };
+    }
   }
 
   async sendTransaction(fromAddress: string, toAddress: string, amount: number, feeRate: number): Promise<string> {
