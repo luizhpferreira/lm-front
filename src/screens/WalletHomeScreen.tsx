@@ -37,14 +37,14 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const checkBackendAndLoadBalance = async () => {
     try {
       console.log('🔍 Verificando disponibilidade do backend...');
-      const isAvailable = await bitcoinService.isBackendAvailable();
+      const isAvailable = await bitcoinService.instance.isBackendAvailable();
       console.log('✅ Backend disponível:', isAvailable);
       setBackendAvailable(isAvailable);
       
       if (isAvailable && wallet) {
         console.log('🔍 Carregando saldo para endereço:', wallet.addresses.p2pkh);
         // Carregar saldo real do backend (usar Legacy por padrão)
-        const addressBalance = await bitcoinService.getAddressBalance(wallet.addresses.p2pkh);
+        const addressBalance = await bitcoinService.instance.getAddressBalance(wallet.addresses.p2pkh);
         console.log('✅ Resposta do saldo:', addressBalance);
         const balanceInBTC = addressBalance.balance / 100000000;
         console.log('💰 Saldo convertido para BTC:', balanceInBTC);
@@ -71,7 +71,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
         setWallet(currentWallet);
       } else {
         // Caso contrário, carregar do armazenamento
-        const savedWallet = await bitcoinService.loadWallet();
+        const savedWallet = await bitcoinService.instance.loadWallet();
         if (savedWallet) {
           currentWallet = savedWallet;
           setWallet(savedWallet);
@@ -122,7 +122,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
   const formatBalance = () => {
     if (balanceUnit === 'sats') {
-      return bitcoinService.formatSatoshis(balance * 100000000);
+      return bitcoinService.instance.formatSatoshis(balance * 100000000);
     } else {
       return `${balance.toFixed(8)} BTC`;
     }

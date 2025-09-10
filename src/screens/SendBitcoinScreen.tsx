@@ -44,12 +44,12 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
 
   const checkBackendAndLoadFees = async () => {
     try {
-      const isAvailable = await bitcoinService.isBackendAvailable();
+      const isAvailable = await bitcoinService.instance.isBackendAvailable();
       setBackendAvailable(isAvailable);
       console.log('Backend disponível:', isAvailable);
       
       if (isAvailable) {
-        const fees = await bitcoinService.getNetworkFees();
+        const fees = await bitcoinService.instance.getNetworkFees();
         setNetworkFees(fees);
         console.log('Taxas da rede carregadas:', fees);
         console.log('Taxas detalhadas:', {
@@ -65,7 +65,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
 
   const loadWallet = async () => {
     try {
-      const loadedWallet = await bitcoinService.loadWallet();
+      const loadedWallet = await bitcoinService.instance.loadWallet();
       if (loadedWallet) {
         setWallet(loadedWallet);
         
@@ -74,7 +74,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
         if (walletAddress) {
           try {
             console.log('🔍 Obtendo saldo real da carteira...');
-            const balanceData = await bitcoinService.getAddressBalance(walletAddress);
+            const balanceData = await bitcoinService.instance.getAddressBalance(walletAddress);
             const balanceInBTC = balanceData.balance / 100000000; // Converter sats para BTC
             setBalance(balanceInBTC);
             console.log('✅ Saldo real carregado:', balanceInBTC, 'BTC');
@@ -83,7 +83,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
             // Tentar novamente após um delay
             setTimeout(async () => {
               try {
-                const balanceData = await bitcoinService.getAddressBalance(walletAddress);
+                const balanceData = await bitcoinService.instance.getAddressBalance(walletAddress);
                 const balanceInBTC = balanceData.balance / 100000000;
                 setBalance(balanceInBTC);
                 console.log('✅ Saldo carregado na segunda tentativa:', balanceInBTC, 'BTC');
@@ -180,7 +180,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
     }
 
     // Validar endereço localmente primeiro
-    if (!bitcoinService.validateAddress(recipientAddress)) {
+    if (!bitcoinService.instance.validateAddress(recipientAddress)) {
       Alert.alert('Erro', 'Endereço Bitcoin inválido');
       return false;
     }
@@ -263,7 +263,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       }
 
       // Enviar transação usando o serviço
-      const txid = await bitcoinService.sendTransaction(
+      const txid = await bitcoinService.instance.sendTransaction(
         fromAddress,
         recipientAddress,
         amountInSats,

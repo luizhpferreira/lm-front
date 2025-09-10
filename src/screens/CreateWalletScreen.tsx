@@ -23,7 +23,7 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
   const handleGenerateWallet = async () => {
     try {
       setIsGenerating(true);
-      const newWallet = await bitcoinService.generateWallet();
+      const newWallet = await bitcoinService.instance.generateWallet();
       setWallet(newWallet);
       setShowMnemonic(true);
     } catch (error) {

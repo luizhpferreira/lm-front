@@ -36,7 +36,7 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
 
     try {
       setIsRestoring(true);
-      const restoredWallet = await bitcoinService.restoreWallet(mnemonic.trim());
+      const restoredWallet = await bitcoinService.instance.restoreWallet(mnemonic.trim());
       setWallet(restoredWallet);
       setShowWallet(true);
     } catch (error) {

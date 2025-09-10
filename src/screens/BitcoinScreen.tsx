@@ -9,6 +9,7 @@ import {
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
 import { bitcoinApiService } from '../services/bitcoinApiService';
+// import { BackupButton } from '../components/BackupButton';
 
 interface BitcoinScreenProps {
   navigation: any;
@@ -24,7 +25,7 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
 
   const checkWallet = async () => {
     try {
-      const walletExists = await bitcoinService.hasWallet();
+      const walletExists = await bitcoinService.instance.hasWallet();
       setHasWallet(walletExists);
     } catch (error) {
       console.error('Erro ao verificar carteira:', error);
@@ -43,7 +44,7 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
 
   const handleOpenWallet = async () => {
     try {
-      const wallet = await bitcoinService.loadWallet();
+      const wallet = await bitcoinService.instance.loadWallet();
       if (wallet) {
         navigation.navigate('WalletHome', { wallet });
       } else {
@@ -73,7 +74,7 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await bitcoinService.deleteWallet();
+              await bitcoinService.instance.deleteWallet();
               setHasWallet(false);
               Alert.alert('Sucesso', 'Carteira deletada com sucesso!');
             } catch (error) {
@@ -108,6 +109,9 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
         <View style={styles.bitcoinSection}>
           <Text style={styles.bitcoinTitle}>Bitcoin</Text>
           <Text style={styles.bitcoinSubtitle}>Modo Soberano</Text>
+          
+          {/* Botão de Backup Temporário */}
+          {/* <BackupButton /> */}
           
           {hasWallet ? (
             <View style={styles.walletExistsCard}>

@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { bitcoinService, BitcoinWallet } from '../services/bitcoinService';
+import { bitcoinService } from '../services/bitcoinService';
+import type { BitcoinWallet } from '../services/bitcoinService';
 import { colors } from '../theme/colors';
 
 interface ReceiveBitcoinScreenProps {
@@ -23,7 +24,7 @@ interface ReceiveBitcoinScreenProps {
 export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navigation, route }) => {
   const [wallet, setWallet] = useState<BitcoinWallet | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedAddressType, setSelectedAddressType] = useState<'p2pkh' | 'p2sh' | 'p2wpkh'>('p2pkh');
+  const [selectedAddressType, setSelectedAddressType] = useState<'p2pkh' | 'p2sh' | 'bech32'>('p2pkh');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
 
@@ -33,7 +34,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
 
   const loadWallet = async () => {
     try {
-      const loadedWallet = await bitcoinService.loadWallet();
+      const loadedWallet = await bitcoinService.instance.loadWallet();
       if (loadedWallet) {
         setWallet(loadedWallet);
       } else {
@@ -58,7 +59,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
     switch (type) {
       case 'p2pkh': return 'Legacy (1...)';
       case 'p2sh': return 'P2SH (3...)';
-      case 'p2wpkh': return 'Bech32 (bc1...)';
+      case 'bech32': return 'Bech32 (bc1...)';
       default: return type;
     }
   };
@@ -161,7 +162,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tipo de Endereço</Text>
           <View style={styles.addressTypeContainer}>
-            {(['p2pkh', 'p2sh', 'p2wpkh'] as const).map((type) => (
+            {(['p2pkh', 'p2sh', 'bech32'] as const).map((type) => (
               <TouchableOpacity
                 key={type}
                 style={[

@@ -1,5 +1,9 @@
-import { registerRootComponent } from 'expo';
+// Polyfills devem ser importados PRIMEIRO, antes de qualquer coisa
+import "./src/setup/crypto-polyfills";
+import "react-native-get-random-values";
+import "react-native-url-polyfill/auto";
 
+import { registerRootComponent } from 'expo';
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
