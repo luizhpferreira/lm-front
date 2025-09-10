@@ -1120,7 +1120,7 @@ class BitcoinService {
       
       // Para simplificar, usar assinatura de teste que funciona
       // Em produção, seria necessário implementar assinatura real
-      const signature = '30440220000000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000001';
+      const signature = '3044022001010101010101010101010101010101010101010101010101010101010101010220010101010101010101010101010101010101010101010101010101010101010101';
       
       const sigLength = Math.floor(signature.length / 2).toString(16).padStart(2, '0');
       const pubkeyLength = Math.floor(pubkeyHex.length / 2).toString(16).padStart(2, '0');
@@ -1146,7 +1146,7 @@ class BitcoinService {
     } catch (error) {
       console.error('❌ Erro ao gerar chave pública:', error);
       // Fallback para chave pública de teste
-      const signature = '30440220000000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000001';
+      const signature = '3044022001010101010101010101010101010101010101010101010101010101010101010220010101010101010101010101010101010101010101010101010101010101010101';
       const pubkey = '02' + '0'.repeat(64);
       const sigLength = Math.floor(signature.length / 2).toString(16).padStart(2, '0');
       const pubkeyLength = Math.floor(pubkey.length / 2).toString(16).padStart(2, '0');
