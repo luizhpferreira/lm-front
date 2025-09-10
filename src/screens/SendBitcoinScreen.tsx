@@ -38,28 +38,35 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
   const [backendAvailable, setBackendAvailable] = useState(false);
 
   useEffect(() => {
-    loadWallet();
-    checkBackendAndLoadFees();
+    const initialize = async () => {
+      await checkBackendAndLoadFees();
+      await loadWallet();
+    };
+    initialize();
   }, []);
 
   const checkBackendAndLoadFees = async () => {
     try {
+      console.log('🔍 Verificando disponibilidade do backend...');
       const isAvailable = await bitcoinService.isBackendAvailable();
       setBackendAvailable(isAvailable);
-      console.log('Backend disponível:', isAvailable);
+      console.log('✅ Backend disponível:', isAvailable);
       
       if (isAvailable) {
         const fees = await bitcoinService.getNetworkFees();
         setNetworkFees(fees);
-        console.log('Taxas da rede carregadas:', fees);
-        console.log('Taxas detalhadas:', {
+        console.log('✅ Taxas da rede carregadas:', fees);
+        console.log('📊 Taxas detalhadas:', {
           economy: fees.economy_fee,
           hour: fees.hour_fee,
           fastest: fees.fastest_fee
         });
+      } else {
+        console.log('❌ Backend não disponível - usando taxas fixas');
       }
     } catch (error) {
-      console.error('Erro ao carregar taxas da rede:', error);
+      console.error('❌ Erro ao carregar taxas da rede:', error);
+      setBackendAvailable(false);
     }
   };
 
@@ -71,20 +78,29 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
         
         // Obter saldo real da carteira (usar Legacy por padrão)
         const walletAddress = loadedWallet.addresses.p2pkh || loadedWallet.addresses.p2wpkh;
+        console.log('🔍 Endereço da carteira:', walletAddress);
+        console.log('🔍 Backend disponível:', backendAvailable);
+        
         if (walletAddress && backendAvailable) {
           try {
             console.log('🔍 Obtendo saldo real da carteira...');
+            console.log('🔍 Endereço:', walletAddress);
+            console.log('🔍 Backend disponível:', backendAvailable);
             const balanceData = await bitcoinService.getAddressBalance(walletAddress);
             const balanceInBTC = balanceData.balance / 100000000; // Converter sats para BTC
             setBalance(balanceInBTC);
-            console.log('✅ Saldo real carregado:', balanceInBTC, 'BTC');
+            console.log('✅ Saldo real carregado:', balanceInBTC, 'BTC', '(', balanceData.balance, 'sats)');
           } catch (error) {
-            console.log('⚠️ Usando saldo simulado (erro ao obter saldo real):', error);
-            setBalance(0.001); // Fallback para saldo simulado
+            console.log('⚠️ Erro ao obter saldo real:', error);
+            console.log('⚠️ Usando saldo simulado (erro ao obter saldo real)');
+            setBalance(0.0001); // Fallback para saldo simulado menor (10.000 sats)
           }
         } else {
           console.log('⚠️ Usando saldo simulado (backend não disponível ou endereço não encontrado)');
-          setBalance(0.001); // Fallback para saldo simulado
+          console.log('⚠️ Motivo:', !walletAddress ? 'Endereço não encontrado' : 'Backend não disponível');
+          console.log('⚠️ walletAddress:', walletAddress);
+          console.log('⚠️ backendAvailable:', backendAvailable);
+          setBalance(0.0001); // Fallback para saldo simulado menor (10.000 sats)
         }
       } else {
         Alert.alert('Erro', 'Carteira não encontrada');
