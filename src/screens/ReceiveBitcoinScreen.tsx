@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
   Alert,
@@ -188,7 +189,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
           <View style={styles.addressContainer}>
             <Text style={styles.addressText}>{getCurrentAddress()}</Text>
             <TouchableOpacity style={styles.copyButton} onPress={copyAddress}>
-              <Ionicons name="copy-outline" size={20} color={colors.primary} />
+              <Ionicons name="copy-outline" size={20} color={colors.primary.main} />
             </TouchableOpacity>
           </View>
         </View>
@@ -198,7 +199,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
           <Text style={styles.sectionTitle}>Valor (opcional)</Text>
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>BTC</Text>
-            <Text style={styles.input} placeholder="0.00000000" value={amount} onChangeText={setAmount} />
+            <TextInput style={styles.input} placeholder="0.00000000" value={amount} onChangeText={setAmount} />
           </View>
         </View>
 
@@ -206,7 +207,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Memo (opcional)</Text>
           <View style={styles.inputContainer}>
-            <Text style={styles.input} placeholder="Descrição do pagamento" value={memo} onChangeText={setMemo} />
+            <TextInput style={styles.input} placeholder="Descrição do pagamento" value={memo} onChangeText={setMemo} />
           </View>
         </View>
 
@@ -217,7 +218,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
             <View style={styles.paymentRequestContainer}>
               <Text style={styles.paymentRequestText}>{generatePaymentRequest()}</Text>
               <TouchableOpacity style={styles.copyButton} onPress={copyPaymentRequest}>
-                <Ionicons name="copy-outline" size={20} color={colors.primary} />
+                <Ionicons name="copy-outline" size={20} color={colors.primary.main} />
               </TouchableOpacity>
             </View>
           </View>
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.primary,
+    borderBottomColor: colors.border.light,
   },
   backButton: {
     padding: 8,
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: colors.primary,
+    color: colors.primary.main,
     fontWeight: '600',
   },
   qrContainer: {
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
   },
   qrText: {
     fontSize: 18,
@@ -347,12 +348,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
     backgroundColor: colors.background.secondary,
   },
   addressTypeButtonSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
   },
   addressTypeText: {
     fontSize: 14,
@@ -369,7 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
   },
   addressText: {
     flex: 1,
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
   },
   inputLabel: {
     fontSize: 16,
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.border.primary,
+    borderColor: colors.border.light,
   },
   paymentRequestText: {
     flex: 1,
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.main,
     borderRadius: 12,
     paddingVertical: 16,
     gap: 8,

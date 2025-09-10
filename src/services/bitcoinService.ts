@@ -3,10 +3,60 @@ import { Buffer } from 'buffer';
 global.Buffer = Buffer;
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as bip39 from 'bip39';
 import { fromSeed } from 'bip32';
 import * as secp256k1 from '@noble/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
+
+// Importar bip39 de forma mais robusta
+let bip39: any;
+try {
+  bip39 = require('bip39');
+  console.log('✅ bip39 importado com sucesso');
+} catch (error) {
+  console.error('❌ Erro ao importar bip39:', error);
+  throw new Error('Falha ao importar bip39');
+}
+
+// Inicializar bip39 se necessário
+console.log('🔍 [DEBUG] Verificando inicialização do bip39...');
+console.log('🔍 [DEBUG] bip39.validateMnemonic:', typeof bip39.validateMnemonic);
+console.log('🔍 [DEBUG] bip39.generateMnemonic:', typeof bip39.generateMnemonic);
+console.log('🔍 [DEBUG] bip39.mnemonicToSeedSync:', typeof bip39.mnemonicToSeedSync);
+
+if (!bip39.validateMnemonic || !bip39.generateMnemonic || !bip39.mnemonicToSeedSync) {
+  console.error('❌ bip39 não foi inicializado corretamente');
+  console.error('❌ Funções disponíveis:', Object.keys(bip39));
+  throw new Error('bip39 não foi inicializado corretamente');
+}
+
+// Função para inicializar bip39 de forma segura
+async function initializeBip39(): Promise<void> {
+  try {
+    console.log('🔍 [DEBUG] Inicializando bip39...');
+    
+    // Aguardar um pouco para garantir que os polyfills foram carregados
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Testar se o bip39 está funcionando
+    const testMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    const isValid = bip39.validateMnemonic(testMnemonic);
+    console.log('✅ Teste do bip39 passou, mnemônico válido:', isValid);
+    
+    if (!isValid) {
+      throw new Error('Teste de validação do bip39 falhou');
+    }
+    
+    console.log('✅ bip39 inicializado com sucesso');
+  } catch (error) {
+    console.error('❌ Teste do bip39 falhou:', error);
+    throw new Error('bip39 não está funcionando corretamente');
+  }
+}
+
+// Inicializar bip39 imediatamente
+initializeBip39().catch(error => {
+  console.error('❌ Falha na inicialização do bip39:', error);
+});
 
 function assertSecpReady() {
   console.log('🔍 [DEBUG] secp256k1.utils:', {
@@ -110,6 +160,15 @@ class BitcoinService {
     try {
       console.log('🔍 [DEBUG] Gerando nova carteira Bitcoin...');
       
+      // Aguardar inicialização do bip39
+      await initializeBip39();
+      
+      // Verificar se bip39 está funcionando
+      if (!bip39.generateMnemonic || !bip39.validateMnemonic || !bip39.mnemonicToSeedSync) {
+        console.error('❌ Funções do bip39 não estão disponíveis');
+        throw new Error('bip39 não está funcionando corretamente');
+      }
+      
       // Gerar mnemônico BIP39
       const mnemonic = bip39.generateMnemonic(256); // 24 palavras (256 bits)
       console.log('✅ Mnemônico gerado:', mnemonic);
@@ -189,6 +248,15 @@ class BitcoinService {
   async restoreWallet(mnemonic: string): Promise<BitcoinWallet> {
     try {
       console.log('🔍 [DEBUG] Restaurando carteira com mnemônico:', mnemonic);
+      
+      // Aguardar inicialização do bip39
+      await initializeBip39();
+      
+      // Verificar se bip39 está funcionando
+      if (!bip39.validateMnemonic || !bip39.mnemonicToSeedSync) {
+        console.error('❌ Funções do bip39 não estão disponíveis');
+        throw new Error('bip39 não está funcionando corretamente');
+      }
       
       // Validar mnemônico
       if (!bip39.validateMnemonic(mnemonic)) {
