@@ -1,6 +1,6 @@
-import 'react-native-get-random-values';
-import { Buffer } from 'buffer';
-global.Buffer = Buffer;
+// Polyfills devem ser importados primeiro
+import './src/setup/crypto-polyfills';
+
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/contexts/AuthContext';

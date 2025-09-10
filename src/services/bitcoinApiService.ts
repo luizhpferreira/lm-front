@@ -278,19 +278,27 @@ class BitcoinApiService {
    */
   async broadcastTransaction(rawTransaction: string): Promise<BroadcastResponse> {
     try {
+      console.log('📡 Transmitindo transação para a rede...');
+      console.log('🔍 Raw transaction:', rawTransaction);
+      console.log('🔍 Transaction length:', rawTransaction.length);
+      
       const request: BroadcastRequest = { raw_transaction: rawTransaction };
       const response = await this.api.post<ApiResponse<BroadcastResponse>>(
         '/api/v1/bitcoin/broadcast',
         request
       );
       
+      console.log('✅ Resposta do broadcast:', response.data);
+      
       if (!response.data.success) {
+        console.error('❌ Erro no broadcast:', response.data.error);
         throw new Error(response.data.error || 'Failed to broadcast transaction');
       }
 
       return response.data.data!;
     } catch (error: any) {
-      console.error('Error broadcasting transaction:', error);
+      console.error('❌ Erro ao transmitir transação:', error);
+      console.error('❌ Detalhes do erro:', error.response?.data);
       throw new Error('Falha ao transmitir transação para a rede');
     }
   }

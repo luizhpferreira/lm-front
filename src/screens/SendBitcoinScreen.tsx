@@ -71,7 +71,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
         
         // Obter saldo real da carteira (usar Legacy por padrão)
         const walletAddress = loadedWallet.addresses.p2pkh || loadedWallet.addresses.p2wpkh;
-        if (walletAddress && backendAvailable) {
+        if (walletAddress) {
           try {
             console.log('🔍 Obtendo saldo real da carteira...');
             const balanceData = await bitcoinService.getAddressBalance(walletAddress);
@@ -79,12 +79,23 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
             setBalance(balanceInBTC);
             console.log('✅ Saldo real carregado:', balanceInBTC, 'BTC');
           } catch (error) {
-            console.log('⚠️ Usando saldo simulado (erro ao obter saldo real):', error);
-            setBalance(0.001); // Fallback para saldo simulado
+            console.log('⚠️ Erro ao obter saldo real:', error);
+            // Tentar novamente após um delay
+            setTimeout(async () => {
+              try {
+                const balanceData = await bitcoinService.getAddressBalance(walletAddress);
+                const balanceInBTC = balanceData.balance / 100000000;
+                setBalance(balanceInBTC);
+                console.log('✅ Saldo carregado na segunda tentativa:', balanceInBTC, 'BTC');
+              } catch (retryError) {
+                console.log('⚠️ Falha na segunda tentativa:', retryError);
+                setBalance(0);
+              }
+            }, 2000);
           }
         } else {
-          console.log('⚠️ Usando saldo simulado (backend não disponível ou endereço não encontrado)');
-          setBalance(0.001); // Fallback para saldo simulado
+          console.log('⚠️ Endereço da carteira não encontrado');
+          setBalance(0);
         }
       } else {
         Alert.alert('Erro', 'Carteira não encontrada');
@@ -174,19 +185,10 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       return false;
     }
 
-    // Se o backend estiver disponível, validar também lá
-    if (backendAvailable) {
-      try {
-        const isValid = await bitcoinService.validateAddressWithBackend(recipientAddress);
-        if (!isValid) {
-          Alert.alert('Erro', 'Endereço Bitcoin inválido');
-          return false;
-        }
-      } catch (error) {
-        console.error('Erro na validação do backend:', error);
-        // Continuar com validação local se o backend falhar
-      }
-    }
+    // Validação do backend desabilitada - usar apenas validação local
+    // O backend valida se o endereço "existe" na blockchain, não se é válido
+    // Para endereços novos ou não utilizados, isso pode falhar incorretamente
+    console.log('✅ Usando apenas validação local (backend desabilitado para validação)');
 
     if (!amount.trim()) {
       Alert.alert('Erro', 'Por favor, informe o valor a ser enviado');
