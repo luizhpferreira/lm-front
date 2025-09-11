@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   TextInput,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,8 +70,8 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       if (loadedWallet) {
         setWallet(loadedWallet);
         
-        // Obter saldo real da carteira (usar Legacy por padrão)
-        const walletAddress = loadedWallet.addresses.p2pkh || loadedWallet.addresses.p2wpkh;
+        // Obter saldo real da carteira (usar Legacy; fallback bech32)
+        const walletAddress = loadedWallet.addresses.p2pkh || loadedWallet.addresses.bech32;
         if (walletAddress) {
           try {
             console.log('🔍 Obtendo saldo real da carteira...');
@@ -218,7 +219,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       console.log('🚀 Enviando transação Bitcoin...');
       
       // Obter endereço da carteira
-      const fromAddress = wallet?.addresses.p2pkh || wallet?.addresses.p2wpkh;
+      const fromAddress = wallet?.addresses.p2pkh || wallet?.addresses.bech32;
       if (!fromAddress) {
         throw new Error('Endereço da carteira não encontrado');
       }
@@ -272,10 +273,15 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       
       console.log('✅ Transação enviada com sucesso:', txid);
       
+      const mempoolUrl = `https://mempool.space/tx/${txid}`;
       Alert.alert(
         'Sucesso!',
-        `Transação enviada com sucesso!\n\nTXID: ${txid}\n\nA transação foi transmitida para a rede Bitcoin e será confirmada em breve.`,
+        `Transação enviada com sucesso!\n\nTXID: ${txid}\n\nVocê pode acompanhar na mempool: ${mempoolUrl}`,
         [
+          {
+            text: 'Ver na mempool',
+            onPress: () => Linking.openURL(mempoolUrl),
+          },
           {
             text: 'OK',
             onPress: () => {
