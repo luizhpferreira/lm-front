@@ -7,6 +7,7 @@ import * as secp from "@noble/secp256k1";
 import { ripemd160 } from "@noble/hashes/legacy";
 import { sha256 } from "@noble/hashes/sha2";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { hexToBytes } from '@noble/hashes/utils';
 import { bitcoinApiService } from './bitcoinApiService';
 
 export interface BitcoinWallet {
@@ -74,6 +75,11 @@ export class BitcoinService {
     
     // Gerar endereço Bitcoin (simplificado - você pode usar bitcoinjs-lib para endereços completos)
     const address = this.generateAddress(publicKey);
+    console.log('🔑 [KEY DERIVED]', {
+      path,
+      publicKey: Buffer.from(publicKey).toString('hex').slice(0, 16) + '...',
+      address
+    });
     
     return {
       path,
@@ -166,6 +172,51 @@ export class BitcoinService {
     return result;
   }
 
+  // Decodificação Base58
+  private base58Decode(text: string): Uint8Array {
+    const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    let num = BigInt(0);
+    for (let i = 0; i < text.length; i++) {
+      const charIndex = alphabet.indexOf(text[i]);
+      if (charIndex === -1) throw new Error('Caractere inválido em Base58');
+      num = num * BigInt(58) + BigInt(charIndex);
+    }
+    // converter BigInt para bytes
+    const bytes: number[] = [];
+    while (num > BigInt(0)) {
+      bytes.unshift(Number(num % BigInt(256)));
+      num = num / BigInt(256);
+    }
+    // preservar zeros à esquerda (cada '1' representa 0x00)
+    for (let i = 0; i < text.length && text[i] === '1'; i++) {
+      bytes.unshift(0);
+    }
+    return new Uint8Array(bytes);
+  }
+
+  // Decodifica Base58Check e retorna payload (sem checksum)
+  private decodeBase58Check(address: string): Uint8Array {
+    const full = this.base58Decode(address);
+    if (full.length < 5) throw new Error('Endereço Base58Check inválido');
+    const payload = full.slice(0, -4);
+    const checksum = full.slice(-4);
+    const expected = sha256(sha256(payload)).slice(0, 4);
+    for (let i = 0; i < 4; i++) {
+      if (checksum[i] !== expected[i]) throw new Error('Checksum inválido no endereço');
+    }
+    return payload;
+  }
+
+  // Monta scriptPubKey P2PKH (OP_DUP OP_HASH160 <20-byte> OP_EQUALVERIFY OP_CHECKSIG)
+  private buildP2PKHOutputScriptFromAddress(address: string): Uint8Array {
+    const payload = this.decodeBase58Check(address);
+    const version = payload[0];
+    if (version !== 0x00) throw new Error('Endereço não é P2PKH mainnet');
+    const pubKeyHash = payload.slice(1); // 20 bytes
+    if (pubKeyHash.length !== 20) throw new Error('pubKeyHash inválido');
+    return new Uint8Array([0x76, 0xa9, 0x14, ...pubKeyHash, 0x88, 0xac]);
+  }
+
   // Conversão de bits para Bech32
   private convertBits(data: Uint8Array, fromBits: number, toBits: number): number[] {
     let acc = 0;
@@ -247,13 +298,273 @@ export class BitcoinService {
     return result;
   }
 
+  // Converte assinatura compact (r||s, 64 bytes) para DER (ASN.1) - Hermes-safe
+  private compactToDER(compact: Uint8Array): Uint8Array {
+    if (!(compact instanceof Uint8Array) || compact.length !== 64) {
+      throw new Error('compact signature deve ter 64 bytes (r||s)');
+    }
+    const rRaw = compact.slice(0, 32);
+    const sRaw = compact.slice(32, 64);
+
+    const stripZeros = (v: Uint8Array) => {
+      let i = 0;
+      while (i < v.length - 1 && v[i] === 0) i++;
+      return v.slice(i);
+    };
+    const toDERInt = (v: Uint8Array) => {
+      let t = stripZeros(v);
+      if (t[0] & 0x80) {
+        const out = new Uint8Array(t.length + 1);
+        out[0] = 0x00;
+        out.set(t, 1);
+        t = out;
+      }
+      const res = new Uint8Array(2 + t.length);
+      res[0] = 0x02; // INTEGER
+      res[1] = t.length;
+      res.set(t, 2);
+      return res;
+    };
+
+    const rDER = toDERInt(rRaw);
+    const sDER = toDERInt(sRaw);
+    const len = rDER.length + sDER.length;
+    const der = new Uint8Array(2 + len);
+    der[0] = 0x30; // SEQUENCE
+    der[1] = len;  // <= 72, cabe em 1 byte
+    der.set(rDER, 2);
+    der.set(sDER, 2 + rDER.length);
+    return der;
+  }
+
+  // Decodifica Bech32 (bc1...) -> { hrp, data }
+  private bech32Decode(addr: string): { hrp: string; data: number[] } {
+    const alphabet = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+    const lower = addr.toLowerCase();
+    const pos = lower.lastIndexOf('1');
+    if (pos < 1) throw new Error('Endereço bech32 inválido');
+    const hrp = lower.slice(0, pos);
+    const dataPart = lower.slice(pos + 1);
+    const data: number[] = [];
+    for (let i = 0; i < dataPart.length; i++) {
+      const v = alphabet.indexOf(dataPart[i]);
+      if (v === -1) throw new Error('Caractere inválido em bech32');
+      data.push(v);
+    }
+    // checksum check
+    const values = [...this.bech32HrpExpand(hrp), ...data];
+    if (this.bech32Polymod(values) !== 1) throw new Error('Checksum bech32 inválido');
+    // remove checksum (last 6)
+    return { hrp, data: data.slice(0, -6) };
+  }
+
+  // Converte 5 bits -> 8 bits (para program bech32)
+  private convertBitsTo8(data: number[], fromBits: number, toBits: number): Uint8Array {
+    let acc = 0;
+    let bits = 0;
+    const maxv = (1 << toBits) - 1;
+    const out: number[] = [];
+    for (let i = 0; i < data.length; i++) {
+      const value = data[i];
+      if (value < 0 || (value >> fromBits) !== 0) throw new Error('Valor inválido em convertBits');
+      acc = (acc << fromBits) | value;
+      bits += fromBits;
+      while (bits >= toBits) {
+        bits -= toBits;
+        out.push((acc >> bits) & maxv);
+      }
+    }
+    if (bits > 0) out.push((acc << (toBits - bits)) & maxv);
+    return new Uint8Array(out);
+  }
+
+  // Script P2SH a partir de endereço 3...
+  private buildP2SHOutputScriptFromAddress(address: string): Uint8Array {
+    const payload = this.decodeBase58Check(address);
+    const version = payload[0];
+    if (version !== 0x05) throw new Error('Endereço não é P2SH mainnet');
+    const scriptHash = payload.slice(1); // 20 bytes
+    if (scriptHash.length !== 20) throw new Error('scriptHash inválido');
+    // OP_HASH160 0x14 <20-byte> OP_EQUAL
+    return new Uint8Array([0xa9, 0x14, ...scriptHash, 0x87]);
+  }
+
+  // Script P2WPKH a partir de endereço bc1...
+  private buildBech32P2WPKHOutputScriptFromAddress(address: string): Uint8Array {
+    const { hrp, data } = this.bech32Decode(address);
+    if (hrp !== 'bc') throw new Error('Endereço bech32 não-mainnet');
+    const witnessVersion = data[0];
+    const prog5 = data.slice(1);
+    const program = this.convertBitsTo8(prog5, 5, 8);
+    if (witnessVersion !== 0 || program.length !== 20) throw new Error('Apenas P2WPKH (v0, 20 bytes) suportado');
+    // 0x00 0x14 <20-byte>
+    return new Uint8Array([0x00, 0x14, ...program]);
+  }
+
+  // Seleciona scriptPubKey baseado no tipo do endereço
+  private buildOutputScriptFromAddress(address: string): Uint8Array {
+    if (address.startsWith('1')) return this.buildP2PKHOutputScriptFromAddress(address);
+    if (address.startsWith('3')) return this.buildP2SHOutputScriptFromAddress(address);
+    if (address.toLowerCase().startsWith('bc1')) return this.buildBech32P2WPKHOutputScriptFromAddress(address);
+    throw new Error('Tipo de endereço não suportado');
+  }
+
+  // Assinador/serializador Legacy P2PKH (placeholder para habilitar compilação)
+  private async buildAndSignLegacyP2PKH(params: {
+    inputs: { txid: string; vout: number; value: number }[];
+    outputs: { value: number; scriptPubKey: Uint8Array }[];
+    privateKey: Uint8Array;
+    publicKey: Uint8Array;
+  }): Promise<string> {
+    const { inputs, outputs, privateKey, publicKey } = params;
+
+    // Helpers
+    const toVarInt = (n: number): Uint8Array => {
+      if (n < 0xfd) return new Uint8Array([n]);
+      if (n <= 0xffff) return new Uint8Array([0xfd, n & 0xff, (n >> 8) & 0xff]);
+      if (n <= 0xffffffff) return new Uint8Array([0xfe, n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]);
+      const b = new Uint8Array(9);
+      b[0] = 0xff;
+      let x = BigInt(n);
+      for (let i = 0; i < 8; i++) { b[1 + i] = Number((x >> BigInt(8 * i)) & BigInt(0xff)); }
+      return b;
+    };
+    const u32LE = (n: number): Uint8Array => new Uint8Array([n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]);
+    const u64LE = (n: number): Uint8Array => {
+      let x = BigInt(n);
+      const b = new Uint8Array(8);
+      for (let i = 0; i < 8; i++) b[i] = Number((x >> BigInt(8 * i)) & BigInt(0xff));
+      return b;
+    };
+    const concat = (...arrs: Uint8Array[]) => {
+      const total = arrs.reduce((s, a) => s + a.length, 0);
+      const out = new Uint8Array(total);
+      let off = 0;
+      for (const a of arrs) { out.set(a, off); off += a.length; }
+      return out;
+    };
+    const hexToBytes = (hex: string): Uint8Array => new Uint8Array(hex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+    const reverse32 = (hex: string): Uint8Array => {
+      const bytes = hexToBytes(hex);
+      return new Uint8Array(Array.from(bytes).reverse());
+    };
+
+    // script builder helpers
+    const pushData = (data: Uint8Array): Uint8Array => {
+      if (data.length < 0x4c) return new Uint8Array([data.length, ...data]);
+      if (data.length <= 0xff) return new Uint8Array([0x4c, data.length, ...data]);
+      if (data.length <= 0xffff) return new Uint8Array([0x4d, data.length & 0xff, (data.length >> 8) & 0xff, ...data]);
+      // not expected for p2pkh
+      throw new Error('pushData too large');
+    };
+
+    // scriptCode for signing (P2PKH): OP_DUP OP_HASH160 0x14 <20-byte> OP_EQUALVERIFY OP_CHECKSIG
+    const scriptPubKeyFromPubkey = (pubkey: Uint8Array): Uint8Array => {
+      const h160 = ripemd160(sha256(pubkey));
+      return new Uint8Array([0x76, 0xa9, 0x14, ...h160, 0x88, 0xac]);
+    };
+
+    const version = u32LE(1);
+    const locktime = u32LE(0);
+    const hashType = u32LE(1); // SIGHASH_ALL
+
+    const scriptCode = scriptPubKeyFromPubkey(publicKey);
+
+    // Build preimage per input and sign
+    const sigs: Uint8Array[] = [];
+    for (let idx = 0; idx < inputs.length; idx++) {
+      const inParts: Uint8Array[] = [];
+      inParts.push(version);
+      inParts.push(toVarInt(inputs.length));
+      for (let i = 0; i < inputs.length; i++) {
+        const inp = inputs[i];
+        inParts.push(reverse32(inp.txid));
+        inParts.push(u32LE(inp.vout));
+        if (i === idx) {
+          inParts.push(toVarInt(scriptCode.length));
+          inParts.push(scriptCode);
+        } else {
+          inParts.push(toVarInt(0));
+        }
+        inParts.push(u32LE(0xffffffff));
+      }
+      // outputs
+      inParts.push(toVarInt(outputs.length));
+      for (const o of outputs) {
+        inParts.push(u64LE(o.value));
+        inParts.push(toVarInt(o.scriptPubKey.length));
+        inParts.push(o.scriptPubKey);
+      }
+      inParts.push(locktime);
+      inParts.push(hashType);
+
+      const preimage = concat(...inParts);
+      const digest = sha256(sha256(preimage));
+
+      // ECDSA (compact) -> DER + sighash byte 0x01 (async)
+      if (digest.length !== 32) throw new Error('digest precisa ter 32 bytes');
+      if (privateKey.length !== 32) throw new Error('privateKey precisa ter 32 bytes');
+      const sigAny: any = secp.sign(digest, privateKey, { lowS: true });
+      let der: Uint8Array;
+      if (sigAny instanceof Uint8Array) {
+        // @noble/secp256k1 → compact bytes (64)
+        der = this.compactToDER(sigAny);
+      } else if (sigAny && typeof sigAny.toDERRaw === 'function') {
+        // @noble/curves Signature → bytes
+        der = sigAny.toDERRaw();
+      } else if (sigAny && typeof sigAny.toDERHex === 'function') {
+        // @noble/curves Signature → hex string
+        der = hexToBytes(sigAny.toDERHex());
+      } else if (sigAny && typeof sigAny.toCompactRaw === 'function') {
+        der = this.compactToDER(sigAny.toCompactRaw());
+      } else if (sigAny && typeof sigAny.toCompactHex === 'function') {
+        der = this.compactToDER(hexToBytes(sigAny.toCompactHex()));
+      } else {
+        throw new Error('Formato de assinatura não suportado');
+      }
+      const sigWithHashType = new Uint8Array(der.length + 1);
+      sigWithHashType.set(der);
+      sigWithHashType[der.length] = 0x01; // SIGHASH_ALL
+      sigs.push(sigWithHashType);
+    }
+
+    // Build final TX with scriptSig for each input
+    const outParts: Uint8Array[] = [];
+    outParts.push(version);
+    outParts.push(toVarInt(inputs.length));
+    for (let i = 0; i < inputs.length; i++) {
+      const inp = inputs[i];
+      outParts.push(reverse32(inp.txid));
+      outParts.push(u32LE(inp.vout));
+      const sig = sigs[i];
+      const pub = publicKey;
+      const scriptSig = concat(pushData(sig), pushData(pub));
+      outParts.push(toVarInt(scriptSig.length));
+      outParts.push(scriptSig);
+      outParts.push(u32LE(0xffffffff));
+    }
+    outParts.push(toVarInt(outputs.length));
+    for (const o of outputs) {
+      outParts.push(u64LE(o.value));
+      outParts.push(toVarInt(o.scriptPubKey.length));
+      outParts.push(o.scriptPubKey);
+    }
+    outParts.push(locktime);
+
+    const raw = concat(...outParts);
+    const hex = Array.from(raw).map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hex;
+  }
+
   // Gera todos os tipos de endereços para uma chave
   generateAllAddresses(publicKey: Uint8Array): { p2pkh: string; p2sh: string; bech32: string } {
-    return {
+    const all = {
       p2pkh: this.generateAddress(publicKey, 'p2pkh'),
       p2sh: this.generateAddress(publicKey, 'p2sh'),
       bech32: this.generateAddress(publicKey, 'bech32')
     };
+    console.log('🏷️ [ADDRESSES GENERATED]', all);
+    return all;
   }
 
   // Salva carteira no AsyncStorage
@@ -469,9 +780,101 @@ export class BitcoinService {
   }
 
   async sendTransaction(fromAddress: string, toAddress: string, amount: number, feeRate: number): Promise<string> {
-    // Implementação básica - retorna um txid fake para desenvolvimento
-    console.log('🔍 [DEBUG] sendTransaction chamado:', { fromAddress, toAddress, amount, feeRate });
-    return 'fake-txid-' + Date.now();
+    console.log('🚀 [SEND PREVIEW] Iniciando envio...', { fromAddress, toAddress, amount_sats: amount, feeRate_sat_per_vb: feeRate });
+
+    // Validar endereço de destino
+    const isValid = this.validateAddress(toAddress);
+    console.log('🧪 [ADDRESS VALIDATION]', { toAddress, isValid });
+    if (!isValid) {
+      console.error('❌ Endereço de destino inválido:', toAddress);
+      throw new Error('Endereço de destino inválido');
+    }
+
+    // Logar saldo atual do destino (para confirmação visual) - não bloqueante
+    try {
+      const destBalance = await this.getAddressBalance(toAddress);
+      console.log('📦 [DEST BALANCE BEFORE]', { toAddress, balance_sats: destBalance.balance });
+    } catch (e) {
+      console.warn('⚠️ Não foi possível obter saldo do destino (não bloqueante).');
+    }
+
+    // Por ora suportamos envio real apenas a partir de carteira Legacy (P2PKH, começa com '1')
+    if (!fromAddress.startsWith('1')) {
+      throw new Error('Envio real suportado apenas a partir de endereços Legacy (1...).');
+    }
+    // Destino pode ser P2PKH (1...), P2SH (3...) ou Bech32 P2WPKH (bc1...)
+
+    // 1) Obter UTXOs do remetente
+    console.log('🔍 [UTXO] Buscando UTXOs para', fromAddress);
+    const { utxos } = await bitcoinApiService.getUTXOs(fromAddress);
+    console.log('✅ [UTXO] Encontrados:', utxos.length);
+    if (!utxos || utxos.length === 0) {
+      throw new Error('Sem UTXOs disponíveis para gastar');
+    }
+
+    // 2) Seleção simples de moedas e estimativa de taxa
+    const DUST_LIMIT = 546;
+    const OVERHEAD_VBYTES = 10;
+    const INPUT_VBYTES = 148;   // estimativa P2PKH legacy
+    const OUTPUT_VBYTES = 34;   // estimativa P2PKH
+
+    let selected: { txid: string; vout: number; value: number }[] = [];
+    let totalIn = 0;
+    let numOutputs = 2; // destino + troco (troco pode virar 0)
+
+    for (const u of utxos) {
+      selected.push({ txid: u.txid, vout: u.vout, value: u.value });
+      totalIn += u.value;
+      const estVBytes = OVERHEAD_VBYTES + selected.length * INPUT_VBYTES + numOutputs * OUTPUT_VBYTES;
+      const estFee = feeRate * estVBytes;
+      if (totalIn >= amount + estFee) break;
+    }
+    if (totalIn < amount) {
+      throw new Error('Saldo insuficiente para o valor solicitado');
+    }
+
+    // Recalcular fee e troco com seleção final
+    const finalVBytes = OVERHEAD_VBYTES + selected.length * INPUT_VBYTES + numOutputs * OUTPUT_VBYTES;
+    let fee = feeRate * finalVBytes;
+    let change = totalIn - amount - fee;
+    if (change > 0 && change < DUST_LIMIT) {
+      // adicionar troco pequeno à taxa
+      fee += change;
+      change = 0;
+      numOutputs = 1;
+    }
+    if (amount + fee > totalIn) {
+      throw new Error('Saldo insuficiente após taxa');
+    }
+
+    console.log('🧮 [FEE] vbytes:', finalVBytes, 'feeRate:', feeRate, 'fee:', fee, 'troco:', change);
+
+    // 3) Construir e assinar transação P2PKH
+    if (!this.root) throw new Error('Wallet não inicializada');
+    const key = this.getKey();
+    const privateKeyHex = key.privateKey;
+    const privateKey = Uint8Array.from(Buffer.from(privateKeyHex, 'hex'));
+    const publicKey = secp.getPublicKey(privateKey, true);
+
+    const toScriptPubKey = this.buildOutputScriptFromAddress(toAddress);
+    const changeScriptPubKey = this.buildP2PKHOutputScriptFromAddress(fromAddress);
+
+    const rawSigned = await this.buildAndSignLegacyP2PKH({
+      inputs: selected,
+      outputs: [
+        { value: amount, scriptPubKey: toScriptPubKey },
+        ...(change > 0 ? [{ value: change, scriptPubKey: changeScriptPubKey }] : [])
+      ],
+      privateKey,
+      publicKey
+    });
+
+    console.log('📦 [RAW TX]', rawSigned);
+
+    // 4) Broadcast via backend
+    const broadcast = await bitcoinApiService.broadcastTransaction(rawSigned);
+    console.log('✅ [BROADCAST] TXID:', broadcast.txid);
+    return broadcast.txid;
   }
 
   validateAddress(address: string): boolean {
