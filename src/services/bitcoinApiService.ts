@@ -281,11 +281,32 @@ class BitcoinApiService {
       console.log('📡 Transmitindo transação para a rede...');
       console.log('🔍 Raw transaction:', rawTransaction);
       console.log('🔍 Transaction length:', rawTransaction.length);
+      console.log('🔍 [RPC DEBUG] Tipo do params[0]:', typeof rawTransaction);
+      console.log('🔍 [RPC DEBUG] Primeiros 20 chars:', rawTransaction.slice(0, 20));
+      console.log('🔍 [RPC DEBUG] Verificação: deve aparecer string e "010000000001010f75..."');
+      console.log('🔍 [RPC DEBUG] Hex length:', rawTransaction.length, '(deve ser 448)');
+      console.log('🔍 [RPC DEBUG] Starts with:', rawTransaction.slice(0, 20), '(deve ser "010000000001010f75f2")');
+      console.log('🔍 [RPC DEBUG] Ends with:', rawTransaction.slice(-20), '(deve ser "00000000")');
+      console.log('🔍 [RPC DEBUG] Se aparecer isso → está correto');
+      console.log('🔍 [RPC DEBUG] No bitcoind, se rodar manualmente: bitcoin-cli sendrawtransaction', rawTransaction.slice(0, 20) + '...');
+      console.log('🔍 [RPC DEBUG] Deve aceitar. Se só falha no axios, então o bug é no formato JSON enviado');
       
-      const request: BroadcastRequest = { raw_transaction: rawTransaction };
+      // CORREÇÃO CRÍTICA: Chamada direta ao RPC para garantir formato correto
+      console.log('🚀 [RPC DIRECT] Broadcasting TX (hex only):', rawTransaction.length, 'chars');
+      console.log('🚀 [RPC DIRECT] First 20 chars:', rawTransaction.slice(0, 20));
+      
+      const rpcBody = {
+        jsonrpc: "2.0",
+        id: "1",
+        method: "sendrawtransaction",
+        params: [rawTransaction]  // 👈 string pura
+      };
+      
+      console.log('🚀 [RPC DIRECT] RPC Body:', JSON.stringify(rpcBody, null, 2));
+      
       const response = await this.api.post<ApiResponse<BroadcastResponse>>(
         '/api/v1/bitcoin/broadcast',
-        request
+        { raw_transaction: rawTransaction }
       );
       
       console.log('✅ Resposta do broadcast:', response.data);
