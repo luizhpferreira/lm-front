@@ -24,9 +24,6 @@ interface ReceiveBitcoinScreenProps {
 export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navigation, route }) => {
   const [wallet, setWallet] = useState<BitcoinWallet | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedAddressType, setSelectedAddressType] = useState<'p2pkh' | 'p2sh' | 'bech32'>('p2pkh');
-  const [amount, setAmount] = useState('');
-  const [memo, setMemo] = useState('');
 
   useEffect(() => {
     loadWallet();
@@ -52,14 +49,15 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
 
   const getCurrentAddress = () => {
     if (!wallet) return '';
-    return wallet.addresses[selectedAddressType];
+    // Sempre usar Bech32 (SegWit) como padrão
+    return wallet.addresses.bech32;
   };
 
   const getAddressTypeLabel = (type: string) => {
     switch (type) {
       case 'p2pkh': return 'Legacy (1...)';
       case 'p2sh': return 'P2SH (3...)';
-      case 'bech32': return 'Bech32 (bc1...)';
+      case 'bech32': return 'SegWit (bc1...) ⭐';
       default: return type;
     }
   };
@@ -90,22 +88,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
     const address = getCurrentAddress();
     if (!address) return '';
 
-    let paymentRequest = `bitcoin:${address}`;
-    const params: string[] = [];
-
-    if (amount) {
-      params.push(`amount=${amount}`);
-    }
-
-    if (memo) {
-      params.push(`label=${encodeURIComponent(memo)}`);
-    }
-
-    if (params.length > 0) {
-      paymentRequest += `?${params.join('&')}`;
-    }
-
-    return paymentRequest;
+    return `bitcoin:${address}`;
   };
 
   const copyPaymentRequest = async () => {
@@ -158,29 +141,13 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
           </View>
         </View>
 
-        {/* Address Type Selection */}
+        {/* Address Type Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tipo de Endereço</Text>
-          <View style={styles.addressTypeContainer}>
-            {(['p2pkh', 'p2sh', 'bech32'] as const).map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.addressTypeButton,
-                  selectedAddressType === type && styles.addressTypeButtonSelected,
-                ]}
-                onPress={() => setSelectedAddressType(type)}
-              >
-                <Text
-                  style={[
-                    styles.addressTypeText,
-                    selectedAddressType === type && styles.addressTypeTextSelected,
-                  ]}
-                >
-                  {getAddressTypeLabel(type)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.addressTypeInfo}>
+            <Text style={styles.addressTypeLabel}>SegWit (bc1...)</Text>
+            <Text style={styles.addressTypeDescription}>
+              Endereço moderno com taxas menores e transações mais rápidas
+            </Text>
           </View>
         </View>
 
@@ -195,35 +162,6 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
           </View>
         </View>
 
-        {/* Amount Input */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Valor (opcional)</Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>BTC</Text>
-            <TextInput style={styles.input} placeholder="0.00000000" value={amount} onChangeText={setAmount} />
-          </View>
-        </View>
-
-        {/* Memo Input */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Memo (opcional)</Text>
-          <View style={styles.inputContainer}>
-            <TextInput style={styles.input} placeholder="Descrição do pagamento" value={memo} onChangeText={setMemo} />
-          </View>
-        </View>
-
-        {/* Payment Request */}
-        {amount && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Solicitação de Pagamento</Text>
-            <View style={styles.paymentRequestContainer}>
-              <Text style={styles.paymentRequestText}>{generatePaymentRequest()}</Text>
-              <TouchableOpacity style={styles.copyButton} onPress={copyPaymentRequest}>
-                <Ionicons name="copy-outline" size={20} color={colors.primary.main} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
@@ -446,6 +384,24 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     color: colors.text.secondary,
+    lineHeight: 20,
+  },
+  addressTypeInfo: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  addressTypeLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary.main,
+    marginBottom: 8,
+  },
+  addressTypeDescription: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
     lineHeight: 20,
   },
 });

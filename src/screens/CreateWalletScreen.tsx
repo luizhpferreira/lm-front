@@ -111,12 +111,12 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
           <View style={styles.addressesContainer}>
             <Text style={styles.addressesTitle}>Seus Endereços Bitcoin</Text>
             <View style={styles.addressItem}>
-              <Text style={styles.addressLabel}>Legacy (Recomendado):</Text>
-              <Text style={styles.addressText}>{wallet.addresses.p2pkh}</Text>
+              <Text style={styles.addressLabel}>SegWit (Recomendado) ⭐:</Text>
+              <Text style={styles.addressText}>{wallet.addresses.bech32}</Text>
             </View>
             <View style={styles.addressItem}>
-              <Text style={styles.addressLabel}>Bech32:</Text>
-              <Text style={styles.addressText}>{wallet.addresses.p2wpkh}</Text>
+              <Text style={styles.addressLabel}>Legacy:</Text>
+              <Text style={styles.addressText}>{wallet.addresses.p2pkh}</Text>
             </View>
           </View>
         </ScrollView>

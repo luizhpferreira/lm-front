@@ -70,8 +70,8 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       if (loadedWallet) {
         setWallet(loadedWallet);
         
-        // Obter saldo real da carteira (usar Legacy; fallback bech32)
-        const walletAddress = loadedWallet.addresses.p2pkh || loadedWallet.addresses.bech32;
+        // Obter saldo real da carteira (priorizar Bech32, depois Legacy, depois P2SH)
+        const walletAddress = loadedWallet.addresses.bech32 || loadedWallet.addresses.p2pkh || loadedWallet.addresses.p2sh;
         if (walletAddress) {
           try {
             console.log('🔍 Obtendo saldo real da carteira...');
@@ -218,11 +218,13 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
     try {
       console.log('🚀 Enviando transação Bitcoin...');
       
-      // Obter endereço da carteira
-      const fromAddress = wallet?.addresses.p2pkh || wallet?.addresses.bech32;
-      if (!fromAddress) {
-        throw new Error('Endereço da carteira não encontrado');
-      }
+        // Obter endereço da carteira (priorizar Bech32, depois Legacy, depois P2SH)
+        const fromAddress = wallet?.addresses.bech32 || wallet?.addresses.p2pkh || wallet?.addresses.p2sh;
+        if (!fromAddress) {
+          throw new Error('Endereço da carteira não encontrado');
+        }
+        
+        console.log('🔍 [FROM ADDRESS] Enviando de:', fromAddress);
 
       // Converter valor para satoshis
       const amountInSats = amountUnit === 'BTC' 

@@ -73,8 +73,8 @@ export class BitcoinService {
     }
     const publicKey = secp.getPublicKey(child.privateKey, true); // compressed
     
-    // Gerar endereço Bitcoin (simplificado - você pode usar bitcoinjs-lib para endereços completos)
-    const address = this.generateAddress(publicKey);
+    // Gerar endereço Bitcoin (padrão: Bech32 para novos usuários)
+    const address = this.generateAddress(publicKey, 'bech32');
     console.log('🔑 [KEY DERIVED]', {
       path,
       publicKey: Buffer.from(publicKey).toString('hex').slice(0, 16) + '...',
@@ -89,8 +89,8 @@ export class BitcoinService {
     };
   }
 
-  // Gera endereço Bitcoin real e válido
-  private generateAddress(publicKey: Uint8Array, type: 'p2pkh' | 'p2sh' | 'bech32' = 'p2pkh'): string {
+  // Gera endereço Bitcoin real e válido (padrão: Bech32 para novos usuários)
+  private generateAddress(publicKey: Uint8Array, type: 'p2pkh' | 'p2sh' | 'bech32' = 'bech32'): string {
     // Gerar hash160 real (SHA256 + RIPEMD160)
     const sha256Hash = sha256(publicKey);
     const hash160 = ripemd160(sha256Hash);
@@ -298,6 +298,18 @@ export class BitcoinService {
     return result;
   }
 
+  // Converte número para varint (variable length integer)
+  private toVarInt(n: number): Uint8Array {
+    if (n < 0xfd) return new Uint8Array([n]);
+    if (n <= 0xffff) return new Uint8Array([0xfd, n & 0xff, (n >> 8) & 0xff]);
+    if (n <= 0xffffffff) return new Uint8Array([0xfe, n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]);
+    const b = new Uint8Array(9);
+    b[0] = 0xff;
+    let x = BigInt(n);
+    for (let i = 0; i < 8; i++) { b[1 + i] = Number((x >> BigInt(8 * i)) & BigInt(0xff)); }
+    return b;
+  }
+
   // Converte assinatura compact (r||s, 64 bytes) para DER (ASN.1) - Hermes-safe
   private compactToDER(compact: Uint8Array): Uint8Array {
     if (!(compact instanceof Uint8Array) || compact.length !== 64) {
@@ -409,7 +421,337 @@ export class BitcoinService {
     throw new Error('Tipo de endereço não suportado');
   }
 
-  // Assinador/serializador Legacy P2PKH (placeholder para habilitar compilação)
+  // Detecta o tipo de endereço e retorna informações necessárias
+  private getAddressInfo(address: string): { type: 'p2pkh' | 'p2sh' | 'p2wpkh'; scriptPubKey: Uint8Array; witnessVersion?: number } {
+    if (address.startsWith('1')) {
+      return {
+        type: 'p2pkh',
+        scriptPubKey: this.buildP2PKHOutputScriptFromAddress(address)
+      };
+    } else if (address.startsWith('3')) {
+      return {
+        type: 'p2sh',
+        scriptPubKey: this.buildP2SHOutputScriptFromAddress(address)
+      };
+    } else if (address.toLowerCase().startsWith('bc1')) {
+      return {
+        type: 'p2wpkh',
+        scriptPubKey: this.buildBech32P2WPKHOutputScriptFromAddress(address),
+        witnessVersion: 0
+      };
+    }
+    throw new Error('Tipo de endereço não suportado');
+  }
+
+  // Constrói preimage BIP143 para SegWit
+  private buildBIP143Preimage(params: {
+    inputs: { txid: string; vout: number; value: number }[];
+    outputs: { value: number; scriptPubKey: Uint8Array }[];
+    inputIndex: number;
+    scriptCode: Uint8Array;
+    hashType: number;
+  }): Uint8Array {
+    const { inputs, outputs, inputIndex, scriptCode, hashType } = params;
+    
+    const u32LE = (n: number): Uint8Array => new Uint8Array([n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]);
+    const u64LE = (n: number): Uint8Array => {
+      let x = BigInt(n);
+      const b = new Uint8Array(8);
+      for (let i = 0; i < 8; i++) b[i] = Number((x >> BigInt(8 * i)) & BigInt(0xff));
+      return b;
+    };
+    const hexToBytes = (hex: string): Uint8Array => new Uint8Array(hex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+    const reverse32 = (hex: string): Uint8Array => {
+      const bytes = hexToBytes(hex);
+      return new Uint8Array(Array.from(bytes).reverse());
+    };
+    const concat = (...arrs: Uint8Array[]) => {
+      const total = arrs.reduce((s, a) => s + a.length, 0);
+      const out = new Uint8Array(total);
+      let off = 0;
+      for (const a of arrs) { out.set(a, off); off += a.length; }
+      return out;
+    };
+
+    // BIP143 preimage structure
+    const parts: Uint8Array[] = [];
+    
+    // 1. Version (4 bytes)
+    parts.push(u32LE(1));
+    
+    // 2. HashPrevouts (32 bytes) - SHA256 of all input outpoints
+    const prevouts = concat(...inputs.map(inp => concat(reverse32(inp.txid), u32LE(inp.vout))));
+    parts.push(sha256(prevouts));
+    
+    // 3. HashSequence (32 bytes) - SHA256 of all input sequence numbers (0xffffffff for SIGHASH_ALL)
+    const sequences = new Uint8Array(inputs.length * 4);
+    for (let i = 0; i < inputs.length; i++) {
+      sequences.set(u32LE(0xffffffff), i * 4);
+    }
+    parts.push(sha256(sequences));
+    
+    // 4. Outpoint (36 bytes) - txid + vout of current input
+    const currentInput = inputs[inputIndex];
+    parts.push(concat(reverse32(currentInput.txid), u32LE(currentInput.vout)));
+    
+    // 5. ScriptCode (varint + script)
+    const scriptCodeLen = this.toVarInt(scriptCode.length);
+    parts.push(concat(scriptCodeLen, scriptCode));
+    
+    // 6. Value (8 bytes) - value of current input
+    parts.push(u64LE(currentInput.value));
+    
+    // 7. Sequence (4 bytes) - sequence number of current input
+    parts.push(u32LE(0xffffffff));
+    
+    // 8. HashOutputs (32 bytes) - SHA256 of all outputs
+    const outputsData = concat(...outputs.map(out => concat(u64LE(out.value), this.toVarInt(out.scriptPubKey.length), out.scriptPubKey)));
+    parts.push(sha256(outputsData));
+    
+    // 9. LockTime (4 bytes)
+    parts.push(u32LE(0));
+    
+    // 10. SighashType (4 bytes)
+    parts.push(u32LE(hashType));
+    
+    return concat(...parts);
+  }
+
+  // Constrói e assina transação SegWit P2WPKH (bc1...)
+  private async buildAndSignP2WPKH(params: {
+    inputs: { txid: string; vout: number; value: number }[];
+    outputs: { value: number; scriptPubKey: Uint8Array }[];
+    privateKey: Uint8Array;
+    publicKey: Uint8Array;
+  }): Promise<string> {
+    const { inputs, outputs, privateKey, publicKey } = params;
+    
+    const u32LE = (n: number): Uint8Array => new Uint8Array([n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]);
+    const u64LE = (n: number): Uint8Array => {
+      let x = BigInt(n);
+      const b = new Uint8Array(8);
+      for (let i = 0; i < 8; i++) b[i] = Number((x >> BigInt(8 * i)) & BigInt(0xff));
+      return b;
+    };
+    const hexToBytes = (hex: string): Uint8Array => new Uint8Array(hex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+    const reverse32 = (hex: string): Uint8Array => {
+      const bytes = hexToBytes(hex);
+      return new Uint8Array(Array.from(bytes).reverse());
+    };
+    const concat = (...arrs: Uint8Array[]) => {
+      const total = arrs.reduce((s, a) => s + a.length, 0);
+      const out = new Uint8Array(total);
+      let off = 0;
+      for (const a of arrs) { out.set(a, off); off += a.length; }
+      return out;
+    };
+
+    // ScriptCode para P2WPKH: OP_DUP OP_HASH160 0x14 <20-byte> OP_EQUALVERIFY OP_CHECKSIG
+    const hash160 = ripemd160(sha256(publicKey));
+    const scriptCode = new Uint8Array([0x76, 0xa9, 0x14, ...hash160, 0x88, 0xac]);
+
+    // Assinar cada input
+    const witnesses: Uint8Array[][] = [];
+    for (let i = 0; i < inputs.length; i++) {
+      const preimage = this.buildBIP143Preimage({
+        inputs,
+        outputs,
+        inputIndex: i,
+        scriptCode,
+        hashType: 1 // SIGHASH_ALL
+      });
+      
+      const digest = sha256(sha256(preimage));
+      
+      // Assinar
+      const sigAny: any = secp.sign(digest, privateKey, { lowS: true });
+      let der: Uint8Array;
+      if (sigAny instanceof Uint8Array) {
+        der = this.compactToDER(sigAny);
+      } else if (sigAny && typeof sigAny.toDERRaw === 'function') {
+        der = sigAny.toDERRaw();
+      } else if (sigAny && typeof sigAny.toDERHex === 'function') {
+        der = hexToBytes(sigAny.toDERHex());
+      } else {
+        throw new Error('Formato de assinatura não suportado');
+      }
+      
+      const sigWithHashType = new Uint8Array(der.length + 1);
+      sigWithHashType.set(der);
+      sigWithHashType[der.length] = 0x01; // SIGHASH_ALL
+      
+      // Witness para P2WPKH: [signature, publicKey]
+      witnesses.push([sigWithHashType, publicKey]);
+    }
+
+    // Construir transação final
+    const parts: Uint8Array[] = [];
+    
+    // Version
+    parts.push(u32LE(1));
+    
+    // Marker e Flag para SegWit
+    parts.push(new Uint8Array([0x00])); // marker
+    parts.push(new Uint8Array([0x01])); // flag
+    
+    // Input count
+    parts.push(this.toVarInt(inputs.length));
+    
+    // Inputs (sem scriptSig para SegWit)
+    for (const inp of inputs) {
+      parts.push(reverse32(inp.txid));
+      parts.push(u32LE(inp.vout));
+      parts.push(this.toVarInt(0)); // scriptSig vazio
+      parts.push(u32LE(0xffffffff));
+    }
+    
+    // Output count
+    parts.push(this.toVarInt(outputs.length));
+    
+    // Outputs
+    for (const out of outputs) {
+      parts.push(u64LE(out.value));
+      parts.push(this.toVarInt(out.scriptPubKey.length));
+      parts.push(out.scriptPubKey);
+    }
+    
+    // Witness data
+    for (const witness of witnesses) {
+      parts.push(this.toVarInt(witness.length));
+      for (const item of witness) {
+        parts.push(this.toVarInt(item.length));
+        parts.push(item);
+      }
+    }
+    
+    // LockTime
+    parts.push(u32LE(0));
+    
+    const raw = concat(...parts);
+    const hex = Array.from(raw).map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hex;
+  }
+
+  // Constrói e assina transação P2SH-P2WPKH (3...)
+  private async buildAndSignP2SH_P2WPKH(params: {
+    inputs: { txid: string; vout: number; value: number }[];
+    outputs: { value: number; scriptPubKey: Uint8Array }[];
+    privateKey: Uint8Array;
+    publicKey: Uint8Array;
+  }): Promise<string> {
+    const { inputs, outputs, privateKey, publicKey } = params;
+    
+    const u32LE = (n: number): Uint8Array => new Uint8Array([n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]);
+    const u64LE = (n: number): Uint8Array => {
+      let x = BigInt(n);
+      const b = new Uint8Array(8);
+      for (let i = 0; i < 8; i++) b[i] = Number((x >> BigInt(8 * i)) & BigInt(0xff));
+      return b;
+    };
+    const hexToBytes = (hex: string): Uint8Array => new Uint8Array(hex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+    const reverse32 = (hex: string): Uint8Array => {
+      const bytes = hexToBytes(hex);
+      return new Uint8Array(Array.from(bytes).reverse());
+    };
+    const concat = (...arrs: Uint8Array[]) => {
+      const total = arrs.reduce((s, a) => s + a.length, 0);
+      const out = new Uint8Array(total);
+      let off = 0;
+      for (const a of arrs) { out.set(a, off); off += a.length; }
+      return out;
+    };
+
+    // RedeemScript para P2SH-P2WPKH: OP_0 0x14 <20-byte hash160>
+    const hash160 = ripemd160(sha256(publicKey));
+    const redeemScript = new Uint8Array([0x00, 0x14, ...hash160]);
+    
+    // ScriptCode para P2SH-P2WPKH: OP_DUP OP_HASH160 0x14 <20-byte> OP_EQUALVERIFY OP_CHECKSIG
+    const scriptCode = new Uint8Array([0x76, 0xa9, 0x14, ...hash160, 0x88, 0xac]);
+
+    // Assinar cada input
+    const witnesses: Uint8Array[][] = [];
+    for (let i = 0; i < inputs.length; i++) {
+      const preimage = this.buildBIP143Preimage({
+        inputs,
+        outputs,
+        inputIndex: i,
+        scriptCode,
+        hashType: 1 // SIGHASH_ALL
+      });
+      
+      const digest = sha256(sha256(preimage));
+      
+      // Assinar
+      const sigAny: any = secp.sign(digest, privateKey, { lowS: true });
+      let der: Uint8Array;
+      if (sigAny instanceof Uint8Array) {
+        der = this.compactToDER(sigAny);
+      } else if (sigAny && typeof sigAny.toDERRaw === 'function') {
+        der = sigAny.toDERRaw();
+      } else if (sigAny && typeof sigAny.toDERHex === 'function') {
+        der = hexToBytes(sigAny.toDERHex());
+    } else {
+        throw new Error('Formato de assinatura não suportado');
+      }
+      
+      const sigWithHashType = new Uint8Array(der.length + 1);
+      sigWithHashType.set(der);
+      sigWithHashType[der.length] = 0x01; // SIGHASH_ALL
+      
+      // Witness para P2SH-P2WPKH: [signature, publicKey]
+      witnesses.push([sigWithHashType, publicKey]);
+    }
+
+    // Construir transação final
+    const parts: Uint8Array[] = [];
+    
+    // Version
+    parts.push(u32LE(1));
+    
+    // Marker e Flag para SegWit
+    parts.push(new Uint8Array([0x00])); // marker
+    parts.push(new Uint8Array([0x01])); // flag
+    
+    // Input count
+    parts.push(this.toVarInt(inputs.length));
+    
+    // Inputs (com redeemScript no scriptSig)
+    for (const inp of inputs) {
+      parts.push(reverse32(inp.txid));
+      parts.push(u32LE(inp.vout));
+      parts.push(this.toVarInt(redeemScript.length));
+      parts.push(redeemScript);
+      parts.push(u32LE(0xffffffff));
+    }
+    
+    // Output count
+    parts.push(this.toVarInt(outputs.length));
+    
+    // Outputs
+    for (const out of outputs) {
+      parts.push(u64LE(out.value));
+      parts.push(this.toVarInt(out.scriptPubKey.length));
+      parts.push(out.scriptPubKey);
+    }
+    
+    // Witness data
+    for (const witness of witnesses) {
+      parts.push(this.toVarInt(witness.length));
+      for (const item of witness) {
+        parts.push(this.toVarInt(item.length));
+        parts.push(item);
+      }
+    }
+    
+    // LockTime
+    parts.push(u32LE(0));
+    
+    const raw = concat(...parts);
+    const hex = Array.from(raw).map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hex;
+  }
+
+  // Assinador/serializador Legacy P2PKH
   private async buildAndSignLegacyP2PKH(params: {
     inputs: { txid: string; vout: number; value: number }[];
     outputs: { value: number; scriptPubKey: Uint8Array }[];
@@ -798,10 +1140,10 @@ export class BitcoinService {
       console.warn('⚠️ Não foi possível obter saldo do destino (não bloqueante).');
     }
 
-    // Por ora suportamos envio real apenas a partir de carteira Legacy (P2PKH, começa com '1')
-    if (!fromAddress.startsWith('1')) {
-      throw new Error('Envio real suportado apenas a partir de endereços Legacy (1...).');
-    }
+    // Suportamos envio a partir de qualquer tipo de endereço: Legacy (1...), P2SH (3...), ou Bech32 (bc1...)
+    const fromAddressInfo = this.getAddressInfo(fromAddress);
+    console.log('🔍 [ADDRESS TYPE] Endereço de origem:', fromAddressInfo.type);
+    
     // Destino pode ser P2PKH (1...), P2SH (3...) ou Bech32 P2WPKH (bc1...)
 
     // 1) Obter UTXOs do remetente
@@ -815,7 +1157,13 @@ export class BitcoinService {
     // 2) Seleção simples de moedas e estimativa de taxa
     const DUST_LIMIT = 546;
     const OVERHEAD_VBYTES = 10;
-    const INPUT_VBYTES = 148;   // estimativa P2PKH legacy
+    
+    // Estimativas de vbytes por tipo de input
+    const INPUT_VBYTES = {
+      p2pkh: 148,    // Legacy P2PKH
+      p2sh: 91,      // P2SH-P2WPKH (witness discount)
+      p2wpkh: 68     // Native SegWit P2WPKH
+    };
     const OUTPUT_VBYTES = 34;   // estimativa P2PKH
 
     let selected: { txid: string; vout: number; value: number }[] = [];
@@ -825,7 +1173,8 @@ export class BitcoinService {
     for (const u of utxos) {
       selected.push({ txid: u.txid, vout: u.vout, value: u.value });
       totalIn += u.value;
-      const estVBytes = OVERHEAD_VBYTES + selected.length * INPUT_VBYTES + numOutputs * OUTPUT_VBYTES;
+      const inputVBytes = INPUT_VBYTES[fromAddressInfo.type];
+      const estVBytes = OVERHEAD_VBYTES + selected.length * inputVBytes + numOutputs * OUTPUT_VBYTES;
       const estFee = feeRate * estVBytes;
       if (totalIn >= amount + estFee) break;
     }
@@ -834,7 +1183,8 @@ export class BitcoinService {
     }
 
     // Recalcular fee e troco com seleção final
-    const finalVBytes = OVERHEAD_VBYTES + selected.length * INPUT_VBYTES + numOutputs * OUTPUT_VBYTES;
+    const inputVBytes = INPUT_VBYTES[fromAddressInfo.type];
+    const finalVBytes = OVERHEAD_VBYTES + selected.length * inputVBytes + numOutputs * OUTPUT_VBYTES;
     let fee = feeRate * finalVBytes;
     let change = totalIn - amount - fee;
     if (change > 0 && change < DUST_LIMIT) {
@@ -857,9 +1207,11 @@ export class BitcoinService {
     const publicKey = secp.getPublicKey(privateKey, true);
 
     const toScriptPubKey = this.buildOutputScriptFromAddress(toAddress);
-    const changeScriptPubKey = this.buildP2PKHOutputScriptFromAddress(fromAddress);
+    const changeScriptPubKey = this.buildOutputScriptFromAddress(fromAddress);
 
-    const rawSigned = await this.buildAndSignLegacyP2PKH({
+    // Escolher método de assinatura baseado no tipo de endereço de origem
+    let rawSigned: string;
+    const txParams = {
       inputs: selected,
       outputs: [
         { value: amount, scriptPubKey: toScriptPubKey },
@@ -867,7 +1219,24 @@ export class BitcoinService {
       ],
       privateKey,
       publicKey
-    });
+    };
+
+    switch (fromAddressInfo.type) {
+      case 'p2pkh':
+        console.log('🔧 [TX TYPE] Construindo transação Legacy P2PKH');
+        rawSigned = await this.buildAndSignLegacyP2PKH(txParams);
+        break;
+      case 'p2sh':
+        console.log('🔧 [TX TYPE] Construindo transação P2SH-P2WPKH');
+        rawSigned = await this.buildAndSignP2SH_P2WPKH(txParams);
+        break;
+      case 'p2wpkh':
+        console.log('🔧 [TX TYPE] Construindo transação P2WPKH');
+        rawSigned = await this.buildAndSignP2WPKH(txParams);
+        break;
+      default:
+        throw new Error(`Tipo de endereço não suportado: ${fromAddressInfo.type}`);
+    }
 
     console.log('📦 [RAW TX]', rawSigned);
 

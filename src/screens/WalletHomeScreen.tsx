@@ -42,9 +42,11 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
       setBackendAvailable(isAvailable);
       
       if (isAvailable && wallet) {
-        console.log('🔍 Carregando saldo para endereço:', wallet.addresses.p2pkh);
-        // Carregar saldo real do backend (usar Legacy por padrão)
-        const addressBalance = await bitcoinService.instance.getAddressBalance(wallet.addresses.p2pkh);
+        // Priorizar Bech32, depois Legacy, depois P2SH
+        const walletAddress = wallet.addresses.bech32 || wallet.addresses.p2pkh || wallet.addresses.p2sh;
+        console.log('🔍 Carregando saldo para endereço:', walletAddress);
+        // Carregar saldo real do backend (usar Bech32 por padrão)
+        const addressBalance = await bitcoinService.instance.getAddressBalance(walletAddress);
         console.log('✅ Resposta do saldo:', addressBalance);
         const balanceInBTC = addressBalance.balance / 100000000;
         console.log('💰 Saldo convertido para BTC:', balanceInBTC);
@@ -232,28 +234,10 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
           </View>
         </View>
 
-        {/* Wallet Info */}
-        <View style={styles.walletInfoContainer}>
-          <Text style={styles.walletInfoTitle}>Informações da Carteira</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Endereço Principal:</Text>
-            <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="middle">
-              {wallet.addresses.p2pkh}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Tipo:</Text>
-            <Text style={styles.infoValue}>Legacy (P2PKH)</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Rede:</Text>
-            <Text style={styles.infoValue}>Bitcoin Mainnet</Text>
-          </View>
-        </View>
 
         {/* Security Notice */}
         <View style={styles.securityContainer}>
-          <Text style={styles.securityTitle}>🔒 Segurança</Text>
+          <Text style={styles.securityTitle}>Segurança</Text>
           <Text style={styles.securityText}>
             Suas chaves privadas estão seguras no seu dispositivo. 
             Faça backup do seu mnemônico em local seguro.
@@ -415,37 +399,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text.primary,
-  },
-  walletInfoContainer: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 12,
-    padding: spacing.lg,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  walletInfoTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    flex: 1,
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-    flex: 2,
-    textAlign: 'right',
   },
   securityContainer: {
     backgroundColor: '#e3f2fd',
