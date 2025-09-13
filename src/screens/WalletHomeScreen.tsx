@@ -211,6 +211,20 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
   return (
     <View style={styles.container}>
+      {/* Header com botão de voltar */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Bitcoin')}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>Carteira Bitcoin</Text>
+          <Text style={styles.subtitle}>Modo Soberano</Text>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -218,11 +232,6 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Carteira Bitcoin</Text>
-          <Text style={styles.subtitle}>Modo Soberano</Text>
-        </View>
 
         {/* Balance Card */}
         <View style={styles.balanceCard}>
@@ -303,48 +312,25 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
           )}
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.actionsContainer}>
-          <Text style={styles.actionsTitle}>Ações Rápidas</Text>
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleSend}>
-              <View style={[styles.actionIcon, { backgroundColor: '#ff6b6b' }]}>
-                <Text style={styles.actionIconText}>→</Text>
-              </View>
-              <Text style={styles.actionText}>Enviar</Text>
-            </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsRow}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleReceive}>
+            <View style={[styles.actionIcon, { backgroundColor: '#51cf66' }]}>
+              <Text style={styles.actionIconText}>←</Text>
+            </View>
+            <Text style={styles.actionText}>Receber</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton} onPress={handleReceive}>
-              <View style={[styles.actionIcon, { backgroundColor: '#51cf66' }]}>
-                <Text style={styles.actionIconText}>←</Text>
-              </View>
-              <Text style={styles.actionText}>Receber</Text>
-            </TouchableOpacity>
-
-
-          </View>
+          <TouchableOpacity style={styles.actionButton} onPress={handleSend}>
+            <View style={[styles.actionIcon, { backgroundColor: '#ff6b6b' }]}>
+              <Text style={styles.actionIconText}>→</Text>
+            </View>
+            <Text style={styles.actionText}>Enviar</Text>
+          </TouchableOpacity>
         </View>
 
 
-        {/* Security Notice */}
-        <View style={styles.securityContainer}>
-          <Text style={styles.securityTitle}>Segurança</Text>
-          <Text style={styles.securityText}>
-            Suas chaves privadas estão seguras no seu dispositivo. 
-            Faça backup do seu mnemônico em local seguro.
-          </Text>
-        </View>
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={() => navigation.navigate('Bitcoin')}
-        >
-          <Text style={styles.navButtonText}>Voltar</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -353,6 +339,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
+  },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  backButton: {
+    padding: spacing.sm,
+    marginRight: spacing.md,
+  },
+  headerContent: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -394,17 +397,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.xl,
   },
-  header: {
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    marginBottom: spacing.lg,
-  },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: 16,
@@ -449,30 +446,16 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
   },
-  actionsContainer: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  actionsTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  actionsGrid: {
+  actionButtonsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xxl * 3,
+    marginBottom: spacing.xl,
   },
   actionButton: {
-    width: '48%',
-    backgroundColor: colors.background.secondary,
-    borderRadius: 12,
-    padding: spacing.lg,
     alignItems: 'center',
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    padding: spacing.md,
   },
   actionIcon: {
     width: 48,
@@ -590,43 +573,5 @@ const styles = StyleSheet.create({
   noTransactionsText: {
     fontSize: 14,
     color: colors.text.secondary,
-  },
-  securityContainer: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 12,
-    padding: spacing.lg,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196f3',
-  },
-  securityTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1976d2',
-    marginBottom: spacing.sm,
-  },
-  securityText: {
-    fontSize: 14,
-    color: '#1976d2',
-    lineHeight: 20,
-  },
-  bottomNav: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.background.secondary,
-    borderTopWidth: 1,
-    borderTopColor: colors.border.light,
-  },
-  navButton: {
-    backgroundColor: colors.primary.main,
-    paddingVertical: spacing.md,
-    borderRadius: 25,
-    alignItems: 'center',
-  },
-  navButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.onPrimary,
   },
 });
