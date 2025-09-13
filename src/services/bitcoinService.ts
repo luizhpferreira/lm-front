@@ -1246,6 +1246,32 @@ export class BitcoinService {
     return broadcast.txid;
   }
 
+  async getTransactions(address: string): Promise<any[]> {
+    try {
+      console.log('🔍 [TRANSACTIONS] Buscando transações para:', address);
+      const response = await bitcoinApiService.getTransactions(address);
+      console.log('✅ [TRANSACTIONS] Transações obtidas:', response.transactions.length);
+      
+      // Converter para formato da UI - agora usando valores reais do backend
+      return response.transactions.map(tx => {
+        return {
+          id: tx.txid,
+          type: tx.value > 0 ? 'received' : 'sent',
+          amount: Math.abs(tx.value),
+          address: address,
+          timestamp: new Date(tx.time).getTime(),
+          confirmations: tx.confirmations,
+          txid: tx.txid,
+          blockHeight: tx.block_height,
+          fee: tx.fee
+        };
+      });
+    } catch (error) {
+      console.error('❌ [TRANSACTIONS] Erro ao obter transações:', error);
+      return [];
+    }
+  }
+
   validateAddress(address: string): boolean {
     // Implementação básica - validação simples de endereço Bitcoin
     return address.length > 20 && (address.startsWith('1') || address.startsWith('3') || address.startsWith('bc1'));

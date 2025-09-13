@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
+import { Ionicons } from '@expo/vector-icons';
 
 interface WalletHomeScreenProps {
   navigation: any;
@@ -23,6 +24,8 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const [isLoading, setIsLoading] = useState(true);
   const [backendAvailable, setBackendAvailable] = useState(false);
   const [balanceUnit, setBalanceUnit] = useState<'sats' | 'BTC'>('sats');
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   useEffect(() => {
     loadWallet();
@@ -31,6 +34,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   useEffect(() => {
     if (wallet) {
       checkBackendAndLoadBalance();
+      loadTransactions();
     }
   }, [wallet]);
 
@@ -101,9 +105,15 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await loadBalance();
-    await checkBackendAndLoadBalance();
-    setIsRefreshing(false);
+    try {
+      await loadBalance();
+      await checkBackendAndLoadBalance();
+      if (wallet) {
+        await loadTransactions();
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleSend = () => {
@@ -112,6 +122,32 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
   const handleReceive = () => {
     navigation.navigate('ReceiveBitcoin', { wallet });
+  };
+
+  const loadTransactions = async () => {
+    if (!wallet) return;
+    
+    setLoadingTransactions(true);
+    try {
+      // Obter endereço da carteira (priorizar Bech32, depois Legacy, depois P2SH)
+      const walletAddress = wallet.addresses.bech32 || wallet.addresses.p2pkh || wallet.addresses.p2sh;
+      if (!walletAddress) {
+        console.log('⚠️ Nenhum endereço da carteira encontrado');
+        setTransactions([]);
+        return;
+      }
+      
+      console.log('🔍 Carregando transações para endereço:', walletAddress);
+      const transactions = await bitcoinService.instance.getTransactions(walletAddress);
+      console.log('✅ Transações carregadas:', transactions.length);
+      
+      setTransactions(transactions);
+    } catch (error) {
+      console.error('❌ Erro ao carregar transações:', error);
+      setTransactions([]);
+    } finally {
+      setLoadingTransactions(false);
+    }
   };
 
 
@@ -124,6 +160,29 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
       return bitcoinService.instance.formatSatoshis(balance * 100000000);
     } else {
       return `${balance.toFixed(8)} BTC`;
+    }
+  };
+
+  const formatTransactionAmount = (amount: number) => {
+    if (balanceUnit === 'sats') {
+      return `${amount.toLocaleString()} sats`;
+    } else {
+      return `${(amount / 100000000).toFixed(8)} BTC`;
+    }
+  };
+
+  const formatTransactionTime = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    
+    if (hours > 0) {
+      return `${hours}h atrás`;
+    } else if (minutes > 0) {
+      return `${minutes}min atrás`;
+    } else {
+      return 'Agora';
     }
   };
 
@@ -179,6 +238,69 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
           <Text style={styles.balanceSubtext}>
             {balance === 0 ? 'Carteira vazia - Receba seu primeiro Bitcoin!' : 'Atualizado agora'}
           </Text>
+        </View>
+
+        {/* Transaction History */}
+        <View style={styles.historyContainer}>
+          <View style={styles.historyHeader}>
+            <Text style={styles.historyTitle}>Histórico</Text>
+            <TouchableOpacity 
+              style={styles.refreshButton} 
+              onPress={loadTransactions}
+              disabled={loadingTransactions}
+            >
+              <Ionicons 
+                name="refresh" 
+                size={20} 
+                color={loadingTransactions ? colors.text.disabled : colors.primary.main} 
+              />
+            </TouchableOpacity>
+          </View>
+          {loadingTransactions ? (
+            <View style={styles.historyLoading}>
+              <Text style={styles.historyLoadingText}>Carregando transações...</Text>
+            </View>
+          ) : transactions.length > 0 ? (
+            <View style={styles.transactionsList}>
+              {transactions.slice(0, 3).map((tx) => (
+                <View key={tx.id} style={styles.transactionItem}>
+                  <View style={styles.transactionIcon}>
+                    <Text style={styles.transactionIconText}>
+                      {tx.type === 'received' ? '↓' : '↑'}
+                    </Text>
+                  </View>
+                  <View style={styles.transactionDetails}>
+                    <Text style={styles.transactionType}>
+                      {tx.type === 'received' ? 'Recebido' : 'Enviado'}
+                    </Text>
+                    <Text style={styles.transactionTime}>
+                      {formatTransactionTime(tx.timestamp)}
+                    </Text>
+                  </View>
+                  <View style={styles.transactionAmount}>
+                    <Text style={[
+                      styles.transactionAmountText,
+                      { color: tx.type === 'received' ? '#51cf66' : '#ff6b6b' }
+                    ]}>
+                      {tx.type === 'received' ? '+' : '-'}{formatTransactionAmount(tx.amount)}
+                    </Text>
+                    <Text style={styles.transactionConfirmations}>
+                      {tx.confirmations} confirmações
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {transactions.length > 3 && (
+                <TouchableOpacity style={styles.viewAllButton}>
+                  <Text style={styles.viewAllText}>Ver todas as transações</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <View style={styles.noTransactions}>
+              <Text style={styles.noTransactionsText}>Nenhuma transação ainda</Text>
+            </View>
+          )}
         </View>
 
         {/* Quick Actions */}
@@ -368,6 +490,106 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  historyContainer: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  refreshButton: {
+    padding: spacing.sm,
+  },
+  historyLoading: {
+    padding: spacing.lg,
+    alignItems: 'center',
+  },
+  historyLoadingText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  transactionsList: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  transactionIconText: {
+    fontSize: 18,
+    color: colors.text.primary,
+  },
+  transactionDetails: {
+    flex: 1,
+  },
+  transactionType: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  transactionTime: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  transactionAmount: {
+    alignItems: 'flex-end',
+  },
+  transactionAmountText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  transactionConfirmations: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  viewAllButton: {
+    padding: spacing.md,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: colors.primary.main,
+    fontWeight: '600',
+  },
+  noTransactions: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  noTransactionsText: {
+    fontSize: 14,
+    color: colors.text.secondary,
   },
   securityContainer: {
     backgroundColor: '#e3f2fd',
