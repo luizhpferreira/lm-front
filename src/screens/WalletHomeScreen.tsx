@@ -114,9 +114,6 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
     navigation.navigate('ReceiveBitcoin', { wallet });
   };
 
-  const handleSettings = () => {
-    navigation.navigate('WalletSettings', { wallet });
-  };
 
   const toggleBalanceUnit = () => {
     setBalanceUnit(prev => prev === 'sats' ? 'BTC' : 'sats');
@@ -130,22 +127,6 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
     }
   };
 
-  const handleBackup = () => {
-    Alert.alert(
-      'Backup da Carteira',
-      'Para fazer backup, anote seu mnemônico em local seguro.',
-      [
-        {
-          text: 'Ver Mnemônico',
-          onPress: () => navigation.navigate('BackupWallet', { wallet }),
-        },
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-      ]
-    );
-  };
 
   if (isLoading) {
     return (
@@ -218,19 +199,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
               <Text style={styles.actionText}>Receber</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton} onPress={handleBackup}>
-              <View style={[styles.actionIcon, { backgroundColor: '#ffd43b' }]}>
-                <Text style={styles.actionIconText}>💾</Text>
-              </View>
-              <Text style={styles.actionText}>Backup</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton} onPress={handleSettings}>
-              <View style={[styles.actionIcon, { backgroundColor: '#74c0fc' }]}>
-                <Text style={styles.actionIconText}>⚙️</Text>
-              </View>
-              <Text style={styles.actionText}>Config</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
