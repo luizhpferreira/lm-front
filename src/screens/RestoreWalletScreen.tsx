@@ -8,9 +8,11 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface RestoreWalletScreenProps {
   navigation: any;
@@ -21,6 +23,7 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
   const [isRestoring, setIsRestoring] = useState(false);
   const [wallet, setWallet] = useState<any>(null);
   const [showWallet, setShowWallet] = useState(false);
+  const deviceInfo = useDeviceInfo();
 
   const handleRestoreWallet = async () => {
     if (!mnemonic.trim()) {
@@ -64,25 +67,41 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
     setMnemonic('');
   };
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    title: {
+      ...styles.title,
+      fontSize: deviceInfo.isSmallScreen ? 20 : 24,
+    },
+    subtitle: {
+      ...styles.subtitle,
+      fontSize: deviceInfo.isSmallScreen ? 14 : 16,
+    },
+  });
+
   if (isRestoring) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Restaurando sua carteira...</Text>
           <Text style={styles.loadingSubtext}>Isso pode levar alguns segundos</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (showWallet && wallet) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Carteira Restaurada</Text>
-            <Text style={styles.subtitle}>Sua carteira foi restaurada com sucesso</Text>
+          <View style={dynamicStyles.header}>
+            <Text style={dynamicStyles.title}>Carteira Restaurada</Text>
+            <Text style={dynamicStyles.subtitle}>Sua carteira foi restaurada com sucesso</Text>
           </View>
 
           <View style={styles.walletInfoContainer}>
@@ -134,16 +153,16 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
             <Text style={styles.primaryButtonText}>Continuar</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Restaurar Carteira</Text>
-          <Text style={styles.subtitle}>Digite seu mnemônico para restaurar sua carteira</Text>
+        <View style={dynamicStyles.header}>
+          <Text style={dynamicStyles.title}>Restaurar Carteira</Text>
+          <Text style={dynamicStyles.subtitle}>Digite seu mnemônico para restaurar sua carteira</Text>
         </View>
 
         <View style={styles.infoContainer}>
@@ -226,7 +245,7 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
           <Text style={styles.primaryButtonText}>Restaurar Carteira</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

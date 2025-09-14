@@ -7,9 +7,11 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface CreateWalletScreenProps {
   navigation: any;
@@ -19,6 +21,7 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
   const [isGenerating, setIsGenerating] = useState(false);
   const [wallet, setWallet] = useState<any>(null);
   const [showMnemonic, setShowMnemonic] = useState(false);
+  const deviceInfo = useDeviceInfo();
 
   const handleGenerateWallet = async () => {
     try {
@@ -67,23 +70,23 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
 
   if (isGenerating) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Gerando sua carteira...</Text>
           <Text style={styles.loadingSubtext}>Isso pode levar alguns segundos</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (showMnemonic && wallet) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Sua Carteira Bitcoin</Text>
-            <Text style={styles.subtitle}>Guarde estas palavras em local seguro</Text>
+          <View style={[styles.header, deviceInfo.isSmallScreen && { marginBottom: spacing.lg }]}>
+            <Text style={[styles.title, deviceInfo.isSmallScreen && { fontSize: 24 }]}>Sua Carteira Bitcoin</Text>
+            <Text style={[styles.subtitle, deviceInfo.isSmallScreen && { fontSize: 14 }]}>Guarde estas palavras em local seguro</Text>
           </View>
 
           <View style={styles.mnemonicContainer}>
@@ -138,16 +141,16 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
             <Text style={styles.primaryButtonText}>Entendi, Continuar</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Criar Carteira Bitcoin</Text>
-          <Text style={styles.subtitle}>Modo Soberano - Você controla suas chaves</Text>
+        <View style={[styles.header, deviceInfo.isSmallScreen && { marginBottom: spacing.lg }]}>
+          <Text style={[styles.title, deviceInfo.isSmallScreen && { fontSize: 24 }]}>Criar Carteira Bitcoin</Text>
+          <Text style={[styles.subtitle, deviceInfo.isSmallScreen && { fontSize: 14 }]}>Modo Soberano - Você controla suas chaves</Text>
         </View>
 
         <View style={styles.infoContainer}>
@@ -194,7 +197,7 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
           <Text style={styles.primaryButtonText}>Criar Carteira</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

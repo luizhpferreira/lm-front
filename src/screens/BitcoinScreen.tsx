@@ -108,12 +108,6 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.bitcoinSection}>
-          <Text style={styles.bitcoinTitle}>Bitcoin</Text>
-          <Text style={styles.bitcoinSubtitle}>Modo Soberano</Text>
-          
-          {/* Botão de Backup Temporário */}
-          {/* <BackupButton /> */}
-          
           {hasWallet ? (
             <View style={styles.walletExistsCard}>
               <Text style={styles.walletExistsTitle}>Carteira Encontrada</Text>
@@ -205,7 +199,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: Math.max(16, spacing.screenPadding * 0.8),
-    paddingVertical: Math.max(20, spacing.screenPadding * 0.8),
+    paddingVertical: Math.max(10, spacing.screenPadding * 0.4),
     justifyContent: 'center',
   },
   bitcoinSection: {
@@ -236,7 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: spacing.lg,
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
     alignItems: 'center',
   },
   walletExistsTitle: {
@@ -255,7 +249,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: spacing.lg,
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
     alignItems: 'center',
   },
   welcomeTitle: {
@@ -272,7 +266,7 @@ const styles = StyleSheet.create({
   },
   walletOptions: {
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
   primaryOption: {
     backgroundColor: colors.primary.main,
@@ -280,7 +274,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   primaryOptionText: {
     fontSize: 18,
@@ -304,16 +298,15 @@ const styles = StyleSheet.create({
   bottomButtons: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 20,
+    paddingBottom: 30,
     backgroundColor: colors.background.secondary,
-    borderTopWidth: 1,
-    borderTopColor: colors.border.light,
   },
   bottomButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     marginHorizontal: spacing.sm,
   },

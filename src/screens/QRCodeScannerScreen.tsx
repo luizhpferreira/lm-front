@@ -9,6 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +18,7 @@ import { apiService } from '../services/api';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 const { width, height } = Dimensions.get('window');
 const SCREEN_WIDTH = width;
@@ -33,6 +35,7 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
   const [paymentRequest, setPaymentRequest] = useState('');
   const [loading, setLoading] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
+  const deviceInfo = useDeviceInfo();
 
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
@@ -46,8 +49,7 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
         'QR Code Inválido',
         'Este QR code não é um payment request Lightning válido.\n\nFormato esperado: lnbc1...',
         [
-          { text: 'OK', onPress: () => setScanned(false) },
-          { text: 'Inserir Manualmente', onPress: () => setShowManualModal(true) }
+        { text: 'OK', onPress: () => setScanned(false) }
         ]
       );
     }
@@ -113,9 +115,6 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
     }
   };
 
-  const handleManualInput = () => {
-    setShowManualModal(true);
-  };
 
   const handleCancel = () => {
     setPaymentRequest('');
@@ -131,32 +130,44 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
 
 
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    headerTitle: {
+      ...styles.headerTitle,
+      fontSize: deviceInfo.isSmallScreen ? 16 : 18,
+    },
+  });
+
   if (!permission) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={styles.container}>
+        <View style={dynamicStyles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Scanner QR Code</Text>
+          <Text style={dynamicStyles.headerTitle}>Scanner QR Code</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Carregando permissões...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={styles.container}>
+        <View style={dynamicStyles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Scanner QR Code</Text>
+          <Text style={dynamicStyles.headerTitle}>Scanner QR Code</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.centerContent}>
@@ -167,24 +178,18 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
           <TouchableOpacity style={styles.manualButton} onPress={requestPermission}>
             <Text style={styles.manualButtonText}>Conceder permissão</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.manualButton} onPress={handleManualInput}>
-            <Text style={styles.manualButtonText}>📝 Inserir Payment Request Manualmente</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backButtonStyle} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonTextStyle}>← Voltar</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container}>
+      <View style={dynamicStyles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Escanear</Text>
+        <Text style={dynamicStyles.headerTitle}>Escanear</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -211,14 +216,6 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
         <Text style={styles.instructionText}>
           Escaneie um QR code de invoice Lightning para pagar automaticamente
         </Text>
-        
-        <View style={styles.controlButtons}>
-          {scanned && (
-            <TouchableOpacity style={styles.scanAgainButton} onPress={resetScanner}>
-              <Text style={styles.scanAgainButtonText}>🔄 Escanear Novamente</Text>
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
 
       {/* Modal para inserção manual ou confirmação */}
@@ -273,7 +270,7 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
