@@ -458,10 +458,24 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
 
         {/* Recipient Address */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Endereço do Destinatário</Text>
+          <View style={styles.addressHeader}>
+            <Text style={styles.sectionTitle}>Endereço do Destinatário</Text>
+            <TouchableOpacity
+              style={styles.qrButton}
+              onPress={() => navigation.navigate('QRCodeScanner', {
+                onScan: (data: string) => {
+                  setRecipientAddress(data);
+                  navigation.goBack();
+                }
+              })}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="qr-code-outline" size={24} color={colors.primary.main} />
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.textInput}
-            placeholder="Digite o endereço Bitcoin"
+            placeholder="Digite o endereço Bitcoin ou escaneie um QR Code"
             value={recipientAddress}
             onChangeText={setRecipientAddress}
             multiline
@@ -852,15 +866,29 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: 12,
   },
+  addressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  qrButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
   textInput: {
     backgroundColor: colors.background.secondary,
     borderRadius: 8,
     padding: 16,
-    fontSize: 16,
+    fontSize: 14,
     color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.border.light,
     minHeight: 50,
+    fontFamily: 'monospace',
   },
   amountContainer: {
     flexDirection: 'row',

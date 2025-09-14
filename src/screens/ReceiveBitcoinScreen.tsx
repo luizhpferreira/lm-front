@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
 import { bitcoinService } from '../services/bitcoinService';
 import type { BitcoinWallet } from '../services/bitcoinService';
 import { colors } from '../theme/colors';
@@ -147,11 +148,19 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* QR Code Placeholder */}
+        {/* QR Code */}
         <View style={styles.qrContainer}>
           <View style={styles.qrCode}>
-            <Text style={styles.qrText}>QR Code</Text>
-            <Text style={styles.qrSubtext}>Endereço: {getCurrentAddress().substring(0, 20)}...</Text>
+            <QRCode
+              value={getCurrentAddress()}
+              size={200}
+              color={colors.text.primary}
+              backgroundColor={colors.background.primary}
+              logoSize={30}
+              logoMargin={2}
+              logoBorderRadius={15}
+              quietZone={10}
+            />
           </View>
         </View>
 
@@ -262,14 +271,15 @@ const styles = StyleSheet.create({
     marginVertical: 30,
   },
   qrCode: {
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     backgroundColor: colors.background.secondary,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border.light,
+    padding: 10,
   },
   qrText: {
     fontSize: 18,
@@ -327,9 +337,10 @@ const styles = StyleSheet.create({
   },
   addressText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 11,
     color: colors.text.primary,
     fontFamily: 'monospace',
+    lineHeight: 14,
   },
   copyButton: {
     padding: 8,

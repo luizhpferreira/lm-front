@@ -85,6 +85,7 @@ export const AppNavigator = () => {
             <Stack.Screen name="WalletHome" component={WalletHomeScreen} />
             <Stack.Screen name="ReceiveBitcoin" component={ReceiveBitcoinScreen} />
             <Stack.Screen name="SendBitcoin" component={SendBitcoinScreen} />
+            <Stack.Screen name="QRCodeScanner" component={QRCodeScannerScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
