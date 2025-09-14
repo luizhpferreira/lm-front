@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { bitcoinService } from '../services/bitcoinService';
 import type { BitcoinWallet } from '../services/bitcoinService';
 import { colors } from '../theme/colors';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface ReceiveBitcoinScreenProps {
   navigation: any;
@@ -24,6 +25,7 @@ interface ReceiveBitcoinScreenProps {
 export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navigation, route }) => {
   const [wallet, setWallet] = useState<BitcoinWallet | null>(null);
   const [loading, setLoading] = useState(true);
+  const deviceInfo = useDeviceInfo();
 
   useEffect(() => {
     loadWallet();
@@ -122,13 +124,25 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
     );
   }
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    headerTitle: {
+      ...styles.headerTitle,
+      fontSize: deviceInfo.isSmallScreen ? 16 : 18,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={dynamicStyles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Receber Bitcoin</Text>
+        <Text style={dynamicStyles.headerTitle}>Receber Bitcoin</Text>
         <View style={styles.placeholder} />
       </View>
 

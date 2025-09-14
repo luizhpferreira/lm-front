@@ -7,10 +7,12 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
 import { Ionicons } from '@expo/vector-icons';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface WalletHomeScreenProps {
   navigation: any;
@@ -26,6 +28,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const [balanceUnit, setBalanceUnit] = useState<'sats' | 'BTC'>('sats');
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const deviceInfo = useDeviceInfo();
 
   useEffect(() => {
     loadWallet();
@@ -106,11 +109,11 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await loadBalance();
-      await checkBackendAndLoadBalance();
-      if (wallet) {
-        await loadTransactions();
-      }
+      // Atualizar saldo e histórico simultaneamente
+      await Promise.all([
+        checkBackendAndLoadBalance(),
+        wallet ? loadTransactions() : Promise.resolve()
+      ]);
     } finally {
       setIsRefreshing(false);
     }
@@ -189,30 +192,51 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Carregando carteira...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Carregando carteira...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!wallet) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Carteira não encontrada</Text>
-        <TouchableOpacity
-          style={styles.errorButton}
-          onPress={() => navigation.navigate('Bitcoin')}
-        >
-          <Text style={styles.errorButtonText}>Voltar</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Carteira não encontrada</Text>
+          <TouchableOpacity
+            style={styles.errorButton}
+            onPress={() => navigation.navigate('Bitcoin')}
+          >
+            <Text style={styles.errorButtonText}>Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    topHeader: {
+      ...styles.topHeader,
+      paddingTop: deviceInfo.isIPhone11 ? spacing.sm : spacing.md,
+      paddingBottom: deviceInfo.isSmallScreen ? spacing.sm : spacing.md,
+    },
+    title: {
+      ...styles.title,
+      fontSize: deviceInfo.isSmallScreen ? 20 : 24,
+    },
+    subtitle: {
+      ...styles.subtitle,
+      fontSize: deviceInfo.isSmallScreen ? 14 : 16,
+    },
+  });
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header com botão de voltar */}
-      <View style={styles.topHeader}>
+      <View style={dynamicStyles.topHeader}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.navigate('Bitcoin')}
@@ -220,8 +244,8 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>Carteira Bitcoin</Text>
-          <Text style={styles.subtitle}>Modo Soberano</Text>
+          <Text style={dynamicStyles.title}>Carteira Bitcoin</Text>
+          <Text style={dynamicStyles.subtitle}>Modo Soberano</Text>
         </View>
       </View>
 
@@ -245,7 +269,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
             </TouchableOpacity>
           </View>
           <Text style={styles.balanceSubtext}>
-            {balance === 0 ? 'Carteira vazia - Receba seu primeiro Bitcoin!' : 'Atualizado agora'}
+            {balance === 0 ? 'Carteira vazia - Receba seu primeiro Bitcoin!' : 'Puxe para baixo para atualizar'}
           </Text>
         </View>
 
@@ -253,17 +277,6 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
         <View style={styles.historyContainer}>
           <View style={styles.historyHeader}>
             <Text style={styles.historyTitle}>Histórico</Text>
-            <TouchableOpacity 
-              style={styles.refreshButton} 
-              onPress={loadTransactions}
-              disabled={loadingTransactions}
-            >
-              <Ionicons 
-                name="refresh" 
-                size={20} 
-                color={loadingTransactions ? colors.text.disabled : colors.primary.main} 
-              />
-            </TouchableOpacity>
           </View>
           {loadingTransactions ? (
             <View style={styles.historyLoading}>
@@ -331,7 +344,7 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -344,7 +357,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md, // Reduzido para dar mais espaço
     paddingBottom: spacing.md,
     backgroundColor: colors.background.primary,
     borderBottomWidth: 1,
@@ -488,9 +501,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: colors.text.primary,
-  },
-  refreshButton: {
-    padding: spacing.sm,
   },
   historyLoading: {
     padding: spacing.lg,

@@ -161,7 +161,7 @@ class ApiService {
   // Login
   async login(data: LoginRequest): Promise<ApiResponse<LoginData>> {
     try {
-      console.log('DEBUG: ApiService login called with:', data);
+      console.log('DEBUG: ApiService login called with email:', data.email);
       const response: AxiosResponse<ApiResponse<LoginData>> = await this.api.post('/api/v1/login', data);
       
       if (response.data.success && response.data.data?.token) {

@@ -9,10 +9,12 @@ import {
   Platform,
   ScrollView,
   TextInput,
+  SafeAreaView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { colors, spacing, typography } from '../theme';
 import { Button, Input, Card, BackButton } from '../components';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface LoginScreenProps {
   navigation: any;
@@ -24,6 +26,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const deviceInfo = useDeviceInfo();
 
   // Função para formatar CPF
   const formatCpf = (value: string): string => {
@@ -50,23 +53,44 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     }
   };
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    topHeader: {
+      ...styles.topHeader,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    title: {
+      ...styles.title,
+      fontSize: deviceInfo.isSmallScreen ? 28 : 32,
+    },
+    subtitle: {
+      ...styles.subtitle,
+      fontSize: deviceInfo.isSmallScreen ? 14 : 16,
+    },
+  });
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <BackButton onPress={() => navigation.goBack()} />
-          
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>⚡</Text>
+    <SafeAreaView style={styles.container}>
+      {/* Header com botão de voltar no topo */}
+      <View style={dynamicStyles.topHeader}>
+        <BackButton onPress={() => navigation.goBack()} />
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.header}>
+            {/* Logo com raio na frente do "a" */}
+            <View style={styles.logoContainer}>
+              <Text style={dynamicStyles.title}>Luma</Text>
+              <View style={styles.logoCircle}>
+                <Text style={styles.logoText}>⚡</Text>
+              </View>
             </View>
+            <Text style={dynamicStyles.subtitle}>Faça login na sua carteira Lightning</Text>
           </View>
-          <Text style={styles.title}>Luma</Text>
-          <Text style={styles.subtitle}>Faça login na sua carteira Lightning</Text>
-        </View>
 
         <Card variant="elevated">
           <Input
@@ -131,6 +155,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -138,6 +163,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
+  },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background.primary,
+  },
+  keyboardContainer: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -147,23 +182,25 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
-    position: 'relative',
-    paddingTop: 28, // Aumentado para dar espaço para o botão de voltar
   },
 
 
   logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.md,
   },
   logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: spacing.sm,
   },
   logoText: {
-    fontSize: 40,
+    fontSize: 28,
   },
   title: {
     fontSize: 32,
@@ -171,6 +208,7 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     color: colors.text.primary,
     marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   inputContainer: {
     marginBottom: spacing.lg,

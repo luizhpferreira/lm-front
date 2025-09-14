@@ -122,7 +122,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
   const handleRegister = async () => {
     console.log('DEBUG: handleRegister called');
-    console.log('DEBUG: Current state:', { email, cpf, password, passwordRepeat });
+    console.log('DEBUG: Current state:', { email, cpf, passwordLength: password?.length, passwordRepeatLength: passwordRepeat?.length });
     
     if (!email || !cpf || !password || !passwordRepeat) {
       console.log('DEBUG: Missing required fields');
@@ -154,7 +154,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     setLoading(true);
     try {
       const cleanCpf = cpf.replace(/\D/g, '');
-      console.log('DEBUG: Calling register with:', { email, cpf: cleanCpf, password, passwordRepeat });
+      console.log('DEBUG: Calling register with:', { email, cpf: cleanCpf, passwordLength: password?.length, passwordRepeatLength: passwordRepeat?.length });
       await register(email, cleanCpf, password, passwordRepeat);
       Alert.alert(
         'Sucesso',

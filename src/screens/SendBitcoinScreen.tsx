@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { bitcoinService, BitcoinWallet, FeeEstimate, FeePriority, FeeValidationResult, FeeValidationContext } from '../services/bitcoinService';
 import { colors } from '../theme/colors';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface SendBitcoinScreenProps {
   navigation: any;
@@ -23,6 +24,7 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
   const [wallet, setWallet] = useState<BitcoinWallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const deviceInfo = useDeviceInfo();
   
   // Form fields
   const [recipientAddress, setRecipientAddress] = useState('');
@@ -417,13 +419,25 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
     );
   }
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    headerTitle: {
+      ...styles.headerTitle,
+      fontSize: deviceInfo.isSmallScreen ? 16 : 18,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={dynamicStyles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Enviar Bitcoin</Text>
+        <Text style={dynamicStyles.headerTitle}>Enviar Bitcoin</Text>
         <View style={styles.placeholder} />
       </View>
 

@@ -9,12 +9,14 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  SafeAreaView,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { colors, spacing, typography } from '../theme';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface CreateInvoiceScreenProps {
   navigation: any;
@@ -29,6 +31,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
   const [invoiceAmount, setInvoiceAmount] = useState<string>('');
   const [qrCodeError, setQrCodeError] = useState<boolean>(false);
   const qrCodeRef = useRef<any>(null);
+  const deviceInfo = useDeviceInfo();
 
   const handleCreateInvoice = async () => {
     if (!amount.trim()) {
@@ -79,7 +82,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
     if (createdInvoice?.payment_request) {
       try {
         await Clipboard.setStringAsync(createdInvoice.payment_request);
-        Alert.alert('Sucesso', 'Pagamento copiado para a área de transferência!');
+        Alert.alert('Sucesso', 'Invoice copiado com sucesso!');
       } catch (error) {
         Alert.alert('Erro', 'Erro ao copiar para a área de transferência');
       }
@@ -93,9 +96,21 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
 
 
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    cardTitle: {
+      ...styles.cardTitle,
+      fontSize: deviceInfo.isSmallScreen ? 18 : 20,
+    },
+  });
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container}>
+      <View style={dynamicStyles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -108,7 +123,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
 
       <ScrollView style={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Novo Pagamento</Text>
+          <Text style={dynamicStyles.cardTitle}>Novo Pagamento</Text>
           
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Valor (sats)</Text>
@@ -234,7 +249,7 @@ export const CreateInvoiceScreen: React.FC<CreateInvoiceScreenProps> = ({ naviga
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

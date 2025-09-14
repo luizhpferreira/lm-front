@@ -89,15 +89,15 @@ export class BitcoinService {
 
   // inicializa seed e HDKey
   initWallet(): void {
-    console.log("🔍 [DEBUG] initWallet - mnemonic:", this.mnemonic);
+    console.log("🔍 [DEBUG] initWallet - mnemonic: [REDACTED FOR SECURITY]");
     if (!this.mnemonic) {
       throw new Error("Nenhuma mnemonic carregada");
     }
     this.seed = mnemonicToSeedSync(this.mnemonic);
-    console.log("🔍 [DEBUG] initWallet - seed:", this.seed);
+    console.log("🔍 [DEBUG] initWallet - seed: [REDACTED FOR SECURITY]");
     console.log("🔍 [DEBUG] initWallet - seed length:", this.seed?.length);
     this.root = HDKey.fromMasterSeed(this.seed);
-    console.log("🔍 [DEBUG] initWallet - root:", this.root);
+    console.log("🔍 [DEBUG] initWallet - root: [REDACTED FOR SECURITY]");
   }
 
   // deriva chave para path padrão BIP84 (Native SegWit: m/84'/0'/0'/0/0)
@@ -568,7 +568,7 @@ export class BitcoinService {
         
         if (hash160Hex === targetHash160) {
           console.log(`✅ [KEY DERIVATION TEST] ENCONTRADO! Path correto: ${path}`);
-          console.log(`✅ [KEY DERIVATION TEST] Chave privada:`, Buffer.from(child.privateKey).toString('hex'));
+          console.log(`✅ [KEY DERIVATION TEST] Chave privada: [REDACTED FOR SECURITY]`);
           console.log(`✅ [KEY DERIVATION TEST] Chave pública:`, Buffer.from(publicKey).toString('hex'));
           return;
         }
@@ -1610,7 +1610,7 @@ export class BitcoinService {
       
       // Criar mnemonic
       const mnemonic = this.createMnemonic();
-      console.log('✅ Mnemonic gerado:', mnemonic);
+      console.log('✅ Mnemonic gerado: [REDACTED FOR SECURITY]');
       
       // Inicializar carteira
       this.initWallet();

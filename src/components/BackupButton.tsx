@@ -23,8 +23,8 @@ export const BackupButton: React.FC = () => {
                 // Mostrar dados do backup no console
                 console.log('📋 DADOS DO BACKUP:');
                 console.log('Timestamp:', walletBackup.timestamp);
-                console.log('Mnemonic:', walletBackup.mnemonic);
-                console.log('Seed Length:', walletBackup.seed.length);
+                console.log('Mnemonic: [REDACTED FOR SECURITY]');
+                console.log('Seed Length:', walletBackup.seed?.length || 0);
                 console.log('Backup Info:', walletBackup.backupInfo);
               }
             }
