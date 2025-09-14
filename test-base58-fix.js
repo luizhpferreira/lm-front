@@ -14,7 +14,7 @@ console.log('✅ Mnemonic gerado:', mnemonic);
 // Gerar seed
 const seed = mnemonicToSeedSync(mnemonic);
 const root = HDKey.fromMasterSeed(seed);
-const child = root.derive("m/44'/0'/0'/0/0");
+const child = root.derive("m/84'/0'/0'/0/0");
 const publicKey = child.publicKey;
 
 // Gerar hash160 real

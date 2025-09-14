@@ -87,7 +87,7 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
           </View>
 
           <View style={styles.mnemonicContainer}>
-            <Text style={styles.mnemonicTitle}>Mnemônico (24 palavras)</Text>
+            <Text style={styles.mnemonicTitle}>Mnemônico (12 palavras)</Text>
             <View style={styles.mnemonicGrid}>
               {wallet.mnemonic.split(' ').map((word: string, index: number) => (
                 <View key={index} style={styles.mnemonicWord}>

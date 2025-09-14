@@ -29,8 +29,8 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
     }
 
     const words = mnemonic.trim().split(/\s+/);
-    if (words.length !== 12 && words.length !== 24) {
-      Alert.alert('Erro', 'O mnemônico deve ter 12 ou 24 palavras.');
+    if (words.length !== 12) {
+      Alert.alert('Erro', 'O mnemônico deve ter exatamente 12 palavras.');
       return;
     }
 
@@ -149,7 +149,7 @@ export const RestoreWalletScreen: React.FC<RestoreWalletScreenProps> = ({ naviga
         <View style={styles.infoContainer}>
           <Text style={styles.infoTitle}>Como restaurar sua carteira:</Text>
           <Text style={styles.infoText}>
-            • Digite as 12 ou 24 palavras do seu mnemônico{'\n'}
+            • Digite as 12 palavras do seu mnemônico{'\n'}
             • Separe as palavras com espaços{'\n'}
             • Certifique-se de que estão na ordem correta{'\n'}
             • Verifique se não há erros de digitação

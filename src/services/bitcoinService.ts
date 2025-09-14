@@ -62,8 +62,8 @@ export class BitcoinService {
     console.log("🔍 [DEBUG] initWallet - root:", this.root);
   }
 
-  // deriva chave para path padrão BIP44 (exemplo Bitcoin: m/44'/0'/0'/0/0)
-  getKey(path = "m/44'/0'/0'/0/0"): BitcoinKey {
+  // deriva chave para path padrão BIP84 (Native SegWit: m/84'/0'/0'/0/0)
+  getKey(path = "m/84'/0'/0'/0/0"): BitcoinKey {
     if (!this.root) {
       throw new Error("Wallet não inicializada");
     }
@@ -73,7 +73,7 @@ export class BitcoinService {
     }
     const publicKey = secp.getPublicKey(child.privateKey, true); // compressed
     
-    // Gerar endereço Bitcoin (padrão: Bech32 para novos usuários)
+    // Gerar endereço Bitcoin (padrão: Bech32 para Native SegWit)
     const address = this.generateAddress(publicKey, 'bech32');
     console.log('🔑 [KEY DERIVED]', {
       path,
@@ -741,8 +741,9 @@ export class BitcoinService {
     outputs: { value: number; scriptPubKey: Uint8Array }[];
     privateKey: Uint8Array;
     publicKey: Uint8Array;
+    fromAddress: string;
   }): Promise<string> {
-    const { inputs, outputs, privateKey, publicKey } = params;
+    const { inputs, outputs, privateKey, publicKey, fromAddress } = params;
     
     const u32LE = (n: number): Uint8Array => new Uint8Array([n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]);
     const u64LE = (n: number): Uint8Array => {
@@ -810,8 +811,7 @@ export class BitcoinService {
     
     // Verificar se o hash160 corresponde ao endereço
     // Para P2WPKH, precisamos do endereço do UTXO, não do TXID
-    // Vamos usar o endereço que está sendo gasto (fromAddress)
-    const fromAddress = 'bc1qrnp8sszwtfa63szsrd4ydv7xkqg8h0tzaye95y'; // Endereço que está sendo gasto
+    // Usar o endereço que está sendo gasto (fromAddress) passado como parâmetro
     const addressHash160 = this.getAddressHash160(fromAddress);
     console.log('🔍 [P2WPKH DEBUG] Hash160 esperado do endereço:', addressHash160);
     console.log('🔍 [P2WPKH DEBUG] Hash160s correspondem?', Array.from(hash160).map(b => b.toString(16).padStart(2, '0')).join('') === addressHash160);
@@ -1872,7 +1872,8 @@ export class BitcoinService {
         ...(change > 0 ? [{ value: change, scriptPubKey: changeScriptPubKey }] : [])
       ],
       privateKey,
-      publicKey
+      publicKey,
+      fromAddress
     };
 
     switch (fromAddressInfo.type) {
