@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { bitcoinService, BitcoinWallet } from '../services/bitcoinService';
+import { bitcoinService, BitcoinWallet, FeeEstimate, FeePriority, FeeValidationResult, FeeValidationContext } from '../services/bitcoinService';
 import { colors } from '../theme/colors';
 
 interface SendBitcoinScreenProps {
@@ -30,6 +30,16 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
   const [amountUnit, setAmountUnit] = useState<'BTC' | 'sats'>('BTC');
   const [feeRate, setFeeRate] = useState('medium');
   const [memo, setMemo] = useState('');
+  
+  // Custom fee states
+  const [customFeeRate, setCustomFeeRate] = useState('');
+  const [showCustomFee, setShowCustomFee] = useState(false);
+  const [feeEstimates, setFeeEstimates] = useState<FeeEstimate[]>([]);
+  const [selectedFeePriority, setSelectedFeePriority] = useState<FeePriority>(FeePriority.STANDARD);
+  
+  // Fee validation states
+  const [feeValidation, setFeeValidation] = useState<FeeValidationResult | null>(null);
+  const [showFeeValidation, setShowFeeValidation] = useState(false);
   
   // Calculated values
   const [estimatedFee, setEstimatedFee] = useState(0);
@@ -58,6 +68,11 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
           hour: fees.hour_fee,
           fastest: fees.fastest_fee
         });
+        
+        // Carregar estimativas detalhadas
+        const estimates = await bitcoinService.instance.getDetailedFeeEstimates();
+        setFeeEstimates(estimates);
+        console.log('Estimativas detalhadas carregadas:', estimates);
       }
     } catch (error) {
       console.error('Erro ao carregar taxas da rede:', error);
@@ -124,34 +139,36 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
   };
 
   const calculateFee = (amountInSats: number): number => {
-    // Se temos taxas reais do backend, usar elas
-    if (networkFees) {
-      const feeRates = {
-        slow: networkFees.economy_fee || 1,
-        medium: networkFees.hour_fee || 5,
-        fast: networkFees.fastest_fee || 10,
-      };
-      
-      // Transação típica: ~250 bytes
-      const txSize = 250;
-      const selectedRate = feeRates[feeRate as keyof typeof feeRates];
-      const calculatedFee = txSize * selectedRate;
-      
-      console.log(`Calculando taxa: ${feeRate} = ${selectedRate} sat/byte × ${txSize} bytes = ${calculatedFee} sats`);
-      return calculatedFee;
+    // Obter endereço da carteira para determinar o tipo
+    const fromAddress = wallet?.addresses.bech32 || wallet?.addresses.p2pkh || wallet?.addresses.p2sh;
+    if (!fromAddress) return 0;
+    
+    // Determinar tipo de endereço
+    const addressType = fromAddress.startsWith('bc1') ? 'p2wpkh' : 
+                       fromAddress.startsWith('3') ? 'p2sh' : 'p2pkh';
+    
+    // Obter tamanho estimado da transação (vSize para SegWit)
+    const { vSize } = bitcoinService.instance.getEstimatedTransactionSize(addressType);
+    
+    // Se taxa customizada está ativa
+    if (selectedFeePriority === FeePriority.CUSTOM && customFeeRate) {
+      const customRate = parseFloat(customFeeRate);
+      if (!isNaN(customRate) && customRate > 0) {
+        const calculatedFee = vSize * customRate;
+        console.log(`Calculando taxa customizada: ${customRate} sat/vbyte × ${vSize} vbytes = ${calculatedFee} sats`);
+        return calculatedFee;
+      }
     }
     
-    // Fallback para taxas estimadas
-    const txSize = 250;
-    const fallbackRates = {
-      slow: 1,    // 1 sat/byte
-      medium: 5,  // 5 sat/byte
-      fast: 10,   // 10 sat/byte
-    };
+    // Usar o novo sistema de prioridade
+    const feeRateValue = bitcoinService.instance.calculateOptimalFee(
+      selectedFeePriority,
+      parseFloat(customFeeRate) || undefined,
+      networkFees
+    );
     
-    const selectedRate = fallbackRates[feeRate as keyof typeof fallbackRates];
-    const calculatedFee = txSize * selectedRate;
-    console.log(`Usando taxa fallback: ${feeRate} = ${selectedRate} sat/byte × ${txSize} bytes = ${calculatedFee} sats`);
+    const calculatedFee = vSize * feeRateValue;
+    console.log(`Calculando taxa: ${selectedFeePriority} = ${feeRateValue} sat/vbyte × ${vSize} vbytes = ${calculatedFee} sats`);
     return calculatedFee;
   };
 
@@ -159,6 +176,8 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
     if (!amount) {
       setEstimatedFee(0);
       setTotalAmount(0);
+      setFeeValidation(null);
+      setShowFeeValidation(false);
       return;
     }
 
@@ -168,11 +187,43 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
 
     setEstimatedFee(fee);
     setTotalAmount(total);
+
+    // Validar taxa customizada em tempo real
+    if (selectedFeePriority === FeePriority.CUSTOM && customFeeRate) {
+      const customRate = parseFloat(customFeeRate);
+      if (!isNaN(customRate) && customRate > 0) {
+        // Obter endereço da carteira para determinar o tipo
+        const fromAddress = wallet?.addresses.bech32 || wallet?.addresses.p2pkh || wallet?.addresses.p2sh;
+        const addressType = fromAddress?.startsWith('bc1') ? 'p2wpkh' : 
+                           fromAddress?.startsWith('3') ? 'p2sh' : 'p2pkh';
+        
+        const { vSize } = bitcoinService.instance.getEstimatedTransactionSize(addressType);
+        
+        const context: FeeValidationContext = {
+          amount: amountInSats,
+          txSize: 250,
+          txVSize: vSize,
+          addressType,
+          networkFees,
+          urgency: 'medium'
+        };
+        
+        const validation = bitcoinService.instance.validateFeeComprehensive(customRate, context);
+        setFeeValidation(validation);
+        setShowFeeValidation(true);
+      } else {
+        setFeeValidation(null);
+        setShowFeeValidation(false);
+      }
+    } else {
+      setFeeValidation(null);
+      setShowFeeValidation(false);
+    }
   };
 
   useEffect(() => {
     updateCalculations();
-  }, [amount, amountUnit, feeRate]);
+  }, [amount, amountUnit, feeRate, selectedFeePriority, customFeeRate]);
 
   const validateForm = async (): Promise<boolean> => {
     if (!recipientAddress.trim()) {
@@ -208,6 +259,40 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
       return false;
     }
 
+    // Validar taxa customizada se estiver ativa
+    if (selectedFeePriority === FeePriority.CUSTOM && customFeeRate) {
+      const customRate = parseFloat(customFeeRate);
+      if (isNaN(customRate) || customRate <= 0) {
+        Alert.alert('Erro', 'Taxa customizada deve ser um número maior que zero');
+        return false;
+      }
+      
+      const context: FeeValidationContext = {
+        amount: amountInSats,
+        txSize: 250,
+        networkFees,
+        urgency: 'medium'
+      };
+      
+      const validation = bitcoinService.instance.validateFeeComprehensive(customRate, context);
+      if (!validation.isValid) {
+        Alert.alert('Erro', validation.message || 'Taxa customizada inválida');
+        return false;
+      }
+      
+      // Mostrar aviso se houver
+      if (validation.warning && validation.severity === 'warning') {
+        Alert.alert(
+          'Aviso',
+          validation.warning,
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Continuar', onPress: () => {} }
+          ]
+        );
+      }
+    }
+
     return true;
   };
 
@@ -231,24 +316,12 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
         ? Math.round(parseFloat(amount) * 100000000)
         : Math.round(parseFloat(amount));
       
-      // Obter taxa selecionada (usar taxas reais se disponíveis)
-      let feeRateValue = 10; // Default
-      if (networkFees) {
-        switch (feeRate) {
-          case 'fast':
-            feeRateValue = networkFees.fastest_fee || 20;
-            break;
-          case 'medium':
-            feeRateValue = networkFees.hour_fee || 10;
-            break;
-          case 'slow':
-            feeRateValue = networkFees.economy_fee || 5;
-            break;
-        }
-      } else {
-        // Fallback para taxas fixas
-        feeRateValue = feeRate === 'fast' ? 20 : feeRate === 'medium' ? 10 : 5;
-      }
+      // Obter taxa selecionada usando o novo sistema
+      const feeRateValue = bitcoinService.instance.calculateOptimalFee(
+        selectedFeePriority,
+        parseFloat(customFeeRate) || undefined,
+        networkFees
+      );
       
       console.log('📊 Dados da transação:', {
         from: fromAddress,
@@ -406,54 +479,206 @@ export const SendBitcoinScreen: React.FC<SendBitcoinScreenProps> = ({ navigation
         {/* Fee Rate */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Taxa de Rede</Text>
-          <View style={styles.feeRateContainer}>
-            {(['slow', 'medium', 'fast'] as const).map((rate) => {
-              const getFeeRate = () => {
-                if (networkFees) {
-                  switch (rate) {
-                    case 'slow': return networkFees.economy_fee || 1;
-                    case 'medium': return networkFees.hour_fee || 5;
-                    case 'fast': return networkFees.fastest_fee || 10;
-                    default: return 1;
-                  }
-                }
-                return rate === 'slow' ? 1 : rate === 'medium' ? 5 : 10;
-              };
+          
+          {/* Taxa Customizada Toggle */}
+          <TouchableOpacity
+            style={styles.customFeeToggle}
+            onPress={() => setShowCustomFee(!showCustomFee)}
+          >
+            <Text style={styles.customFeeToggleText}>
+              {showCustomFee ? 'Ocultar Taxa Customizada' : 'Taxa Customizada'}
+            </Text>
+            <Ionicons 
+              name={showCustomFee ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color={colors.primary.main} 
+            />
+          </TouchableOpacity>
+
+          {/* Taxa Customizada Input */}
+          {showCustomFee && (
+            <View style={styles.customFeeContainer}>
+              <Text style={styles.customFeeLabel}>Taxa Customizada (sat/vbyte)</Text>
+              <TextInput
+                style={styles.customFeeInput}
+                placeholder="Ex: 15"
+                value={customFeeRate}
+                onChangeText={(text) => {
+                  setCustomFeeRate(text);
+                  setSelectedFeePriority(FeePriority.CUSTOM);
+                }}
+                keyboardType="numeric"
+                placeholderTextColor={colors.text.tertiary}
+              />
+              {customFeeRate && (
+                <Text style={styles.feeEstimateText}>
+                  Tempo estimado: {bitcoinService.instance.estimateConfirmationTime(parseFloat(customFeeRate) || 0)}
+                </Text>
+              )}
               
-              const currentFeeRate = getFeeRate();
+              {/* Validação em tempo real */}
+              {showFeeValidation && feeValidation && (
+                <View style={[
+                  styles.validationContainer,
+                  feeValidation.severity === 'error' && styles.validationError,
+                  feeValidation.severity === 'warning' && styles.validationWarning,
+                  feeValidation.severity === 'info' && styles.validationInfo
+                ]}>
+                  <Ionicons 
+                    name={
+                      feeValidation.severity === 'error' ? 'alert-circle' :
+                      feeValidation.severity === 'warning' ? 'warning' : 'checkmark-circle'
+                    } 
+                    size={16} 
+                    color={
+                      feeValidation.severity === 'error' ? colors.error.main :
+                      feeValidation.severity === 'warning' ? colors.warning.main : colors.success.main
+                    } 
+                  />
+                  <View style={styles.validationContent}>
+                    {feeValidation.message && (
+                      <Text style={[
+                        styles.validationMessage,
+                        feeValidation.severity === 'error' && styles.validationMessageError,
+                        feeValidation.severity === 'warning' && styles.validationMessageWarning
+                      ]}>
+                        {feeValidation.message}
+                      </Text>
+                    )}
+                    {feeValidation.warning && (
+                      <Text style={styles.validationWarning}>
+                        {feeValidation.warning}
+                      </Text>
+                    )}
+                    {feeValidation.suggestedRate && (
+                      <TouchableOpacity
+                        style={styles.suggestedRateButton}
+                        onPress={() => setCustomFeeRate(feeValidation.suggestedRate!.toString())}
+                      >
+                        <Text style={styles.suggestedRateText}>
+                          Usar taxa sugerida: {feeValidation.suggestedRate} sat/vbyte
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              )}
               
-              return (
+              <Text style={styles.feeHelpText}>
+                Taxa mais alta = confirmação mais rápida
+              </Text>
+            </View>
+          )}
+
+          {/* Taxa Preset Options */}
+          {!showCustomFee && (
+            <View style={styles.feeRateContainer}>
+              {feeEstimates.map((estimate, index) => (
                 <TouchableOpacity
-                  key={rate}
+                  key={index}
                   style={[
                     styles.feeRateButton,
-                    feeRate === rate && styles.feeRateButtonSelected,
+                    selectedFeePriority === estimate.priority && styles.feeRateButtonSelected,
                   ]}
                   onPress={() => {
-                    console.log(`Selecionando taxa ${rate}: ${currentFeeRate} sat/byte`);
-                    setFeeRate(rate);
+                    console.log(`Selecionando taxa ${estimate.priority}: ${estimate.satPerVByte} sat/vbyte`);
+                    setSelectedFeePriority(estimate.priority as FeePriority);
+                    setCustomFeeRate(''); // Limpar taxa customizada
                   }}
                 >
                   <Text
                     style={[
                       styles.feeRateText,
-                      feeRate === rate && styles.feeRateTextSelected,
+                      selectedFeePriority === estimate.priority && styles.feeRateTextSelected,
                     ]}
                   >
-                    {rate === 'slow' ? 'Lenta' : rate === 'medium' ? 'Média' : 'Rápida'}
+                    {estimate.description}
                   </Text>
                   <Text
                     style={[
                       styles.feeRateSubtext,
-                      feeRate === rate && styles.feeRateSubtextSelected,
+                      selectedFeePriority === estimate.priority && styles.feeRateSubtextSelected,
                     ]}
                   >
-                    {currentFeeRate} sat/byte
+                    {estimate.satPerVByte} sat/vbyte
+                  </Text>
+                  <Text
+                    style={[
+                      styles.feeRateTime,
+                      selectedFeePriority === estimate.priority && styles.feeRateTimeSelected,
+                    ]}
+                  >
+                    {estimate.estimatedTime}
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
-          </View>
+              ))}
+            </View>
+          )}
+
+          {/* Smart Fee Suggestion */}
+          {amount && (
+            <View style={styles.smartSuggestionContainer}>
+              <Ionicons name="bulb-outline" size={16} color={colors.warning.main} />
+              <Text style={styles.smartSuggestionText}>
+                {bitcoinService.instance.getSmartFeeSuggestion(
+                  convertAmount(amount, amountUnit, 'sats'),
+                  networkFees
+                )}
+              </Text>
+            </View>
+          )}
+
+          {/* Fee Security Information */}
+          {amount && (selectedFeePriority === FeePriority.CUSTOM || showCustomFee) && (
+            <View style={styles.feeSecurityContainer}>
+              <Text style={styles.feeSecurityTitle}>🛡️ Informações de Segurança</Text>
+              
+              {(() => {
+                const amountInSats = convertAmount(amount, amountUnit, 'sats');
+                const currentRate = selectedFeePriority === FeePriority.CUSTOM && customFeeRate 
+                  ? parseFloat(customFeeRate) 
+                  : bitcoinService.instance.calculateOptimalFee(selectedFeePriority, undefined, networkFees);
+                const estimatedFee = currentRate * 250;
+                const feePercentage = (estimatedFee / amountInSats) * 100;
+                const minSafeFee = bitcoinService.instance.calculateMinimumSafeFee(amountInSats);
+                
+                return (
+                  <View style={styles.feeSecurityInfo}>
+                    <View style={styles.feeSecurityRow}>
+                      <Text style={styles.feeSecurityLabel}>Taxa atual:</Text>
+                      <Text style={styles.feeSecurityValue}>{currentRate} sat/vbyte</Text>
+                    </View>
+                    
+                    <View style={styles.feeSecurityRow}>
+                      <Text style={styles.feeSecurityLabel}>Taxa mínima segura:</Text>
+                      <Text style={styles.feeSecurityValue}>{minSafeFee} sat/vbyte</Text>
+                    </View>
+                    
+                    <View style={styles.feeSecurityRow}>
+                      <Text style={styles.feeSecurityLabel}>% do valor:</Text>
+                      <Text style={[
+                        styles.feeSecurityValue,
+                        feePercentage > 20 && styles.feeSecurityValueWarning,
+                        feePercentage > 50 && styles.feeSecurityValueError
+                      ]}>
+                        {feePercentage.toFixed(1)}%
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.feeSecurityRow}>
+                      <Text style={styles.feeSecurityLabel}>Status:</Text>
+                      <Text style={[
+                        styles.feeSecurityValue,
+                        currentRate >= minSafeFee ? styles.feeSecurityValueSuccess : styles.feeSecurityValueWarning
+                      ]}>
+                        {currentRate >= minSafeFee ? '✅ Seguro' : '⚠️ Baixo'}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
+            </View>
+          )}
         </View>
 
         {/* Memo */}
@@ -681,6 +906,172 @@ const styles = StyleSheet.create({
   },
   feeRateSubtextSelected: {
     color: colors.text.onPrimary,
+  },
+  feeRateTime: {
+    fontSize: 10,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  feeRateTimeSelected: {
+    color: colors.text.onPrimary,
+  },
+  customFeeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.background.secondary,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  customFeeToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary.main,
+  },
+  customFeeContainer: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  customFeeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginBottom: 8,
+  },
+  customFeeInput: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: colors.text.primary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    marginBottom: 8,
+  },
+  feeEstimateText: {
+    fontSize: 12,
+    color: colors.info.main,
+    marginBottom: 4,
+  },
+  feeHelpText: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    fontStyle: 'italic',
+  },
+  smartSuggestionContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.background.secondary,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    gap: 8,
+  },
+  smartSuggestionText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.text.secondary,
+    lineHeight: 16,
+  },
+  validationContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.background.tertiary,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    gap: 8,
+  },
+  validationError: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: colors.error.main,
+  },
+  validationWarning: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: colors.warning.main,
+  },
+  validationInfo: {
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: colors.info.main,
+  },
+  validationContent: {
+    flex: 1,
+  },
+  validationMessage: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  validationMessageError: {
+    color: colors.error.main,
+  },
+  validationMessageWarning: {
+    color: colors.warning.main,
+  },
+  suggestedRateButton: {
+    backgroundColor: colors.primary.main,
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  suggestedRateText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.inverse,
+  },
+  feeSecurityContainer: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  feeSecurityTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 12,
+  },
+  feeSecurityInfo: {
+    gap: 8,
+  },
+  feeSecurityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  feeSecurityLabel: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    flex: 1,
+  },
+  feeSecurityValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  feeSecurityValueSuccess: {
+    color: colors.success.main,
+  },
+  feeSecurityValueWarning: {
+    color: colors.warning.main,
+  },
+  feeSecurityValueError: {
+    color: colors.error.main,
   },
   summaryContainer: {
     backgroundColor: colors.background.secondary,

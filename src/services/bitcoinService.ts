@@ -28,6 +28,44 @@ export interface BitcoinKey {
   address: string;
 }
 
+export interface FeeOptions {
+  economy: number;    // Taxa econômica (mempool padrão)
+  hour: number;       // Taxa média (1 hora)
+  fastest: number;    // Taxa rápida (10-30 min)
+  custom?: number;    // Taxa customizada pelo usuário
+}
+
+export interface FeeEstimate {
+  satPerVByte: number; // Corrigido: usar sat/vbyte para SegWit
+  estimatedTime: string;
+  description: string;
+  priority: 'economy' | 'standard' | 'fast' | 'custom';
+}
+
+export enum FeePriority {
+  ECONOMY = 'economy',
+  STANDARD = 'standard', 
+  FAST = 'fast',
+  CUSTOM = 'custom'
+}
+
+export interface FeeValidationResult {
+  isValid: boolean;
+  message?: string;
+  warning?: string;
+  severity: 'error' | 'warning' | 'info';
+  suggestedRate?: number;
+}
+
+export interface FeeValidationContext {
+  amount: number; // em satoshis
+  txSize?: number; // tamanho estimado da transação em bytes
+  txVSize?: number; // tamanho virtual estimado da transação em vbytes (para SegWit)
+  addressType?: 'p2pkh' | 'p2sh' | 'p2wpkh'; // tipo de endereço
+  networkFees?: { economy_fee: number; hour_fee: number; fastest_fee: number };
+  urgency?: 'low' | 'medium' | 'high';
+}
+
 export class BitcoinService {
   private readonly STORAGE_KEY = 'bitcoin_wallet';
 
@@ -1684,6 +1722,411 @@ export class BitcoinService {
         fastest_fee: 10
       };
     }
+  }
+
+  // Obter estimativas detalhadas de taxa com tempo de confirmação
+  async getDetailedFeeEstimates(): Promise<FeeEstimate[]> {
+    try {
+      const fees = await this.getNetworkFees();
+      return [
+        {
+          satPerVByte: fees.economy_fee, // Corrigido: usar sat/vbyte
+          estimatedTime: '2-6 horas',
+          description: 'Econômica',
+          priority: 'economy'
+        },
+        {
+          satPerVByte: fees.hour_fee, // Corrigido: usar sat/vbyte
+          estimatedTime: '30-60 minutos',
+          description: 'Padrão',
+          priority: 'standard'
+        },
+        {
+          satPerVByte: fees.fastest_fee, // Corrigido: usar sat/vbyte
+          estimatedTime: '10-30 minutos',
+          description: 'Rápida',
+          priority: 'fast'
+        }
+      ];
+    } catch (error) {
+      console.error('❌ Erro ao obter estimativas detalhadas:', error);
+      // Fallback para valores padrão
+      return [
+        {
+          satPerVByte: 1, // Corrigido: usar sat/vbyte
+          estimatedTime: '2-6 horas',
+          description: 'Econômica',
+          priority: 'economy'
+        },
+        {
+          satPerVByte: 5, // Corrigido: usar sat/vbyte
+          estimatedTime: '30-60 minutos',
+          description: 'Padrão',
+          priority: 'standard'
+        },
+        {
+          satPerVByte: 10, // Corrigido: usar sat/vbyte
+          estimatedTime: '10-30 minutos',
+          description: 'Rápida',
+          priority: 'fast'
+        }
+      ];
+    }
+  }
+
+  // Calcular taxa ótima baseada na prioridade
+  calculateOptimalFee(
+    priority: FeePriority,
+    customRate?: number,
+    networkFees?: { economy_fee: number; hour_fee: number; fastest_fee: number }
+  ): number {
+    if (priority === FeePriority.CUSTOM && customRate) {
+      return customRate;
+    }
+    
+    if (!networkFees) {
+      // Fallback rates
+      const fallbackRates: Record<FeePriority, number> = {
+        [FeePriority.ECONOMY]: 1,
+        [FeePriority.STANDARD]: 5,
+        [FeePriority.FAST]: 10,
+        [FeePriority.CUSTOM]: 5 // Default para custom
+      };
+      return fallbackRates[priority];
+    }
+    
+    const rates: Record<FeePriority, number> = {
+      [FeePriority.ECONOMY]: networkFees.economy_fee,
+      [FeePriority.STANDARD]: networkFees.hour_fee,
+      [FeePriority.FAST]: networkFees.fastest_fee,
+      [FeePriority.CUSTOM]: 5 // Default para custom
+    };
+    
+    return rates[priority] || 5;
+  }
+
+  // Estimar tempo de confirmação baseado na taxa
+  estimateConfirmationTime(satPerVByte: number): string {
+    if (satPerVByte >= 20) return '10-30 minutos';
+    if (satPerVByte >= 10) return '30-60 minutos';
+    if (satPerVByte >= 5) return '1-2 horas';
+    if (satPerVByte >= 2) return '2-6 horas';
+    return '6+ horas';
+  }
+
+  // Converter sat/byte para sat/vbyte baseado no tipo de endereço
+  convertSatPerByteToVByte(satPerByte: number, addressType: 'p2pkh' | 'p2sh' | 'p2wpkh'): number {
+    switch (addressType) {
+      case 'p2pkh':
+        // Legacy: 1 byte = 1 vbyte
+        return satPerByte;
+      case 'p2sh':
+        // P2SH-P2WPKH: witness discount aplicado
+        return satPerByte;
+      case 'p2wpkh':
+        // Native SegWit: witness discount aplicado
+        return satPerByte;
+      default:
+        return satPerByte;
+    }
+  }
+
+  // Obter tamanho estimado da transação baseado no tipo de endereço
+  getEstimatedTransactionSize(addressType: 'p2pkh' | 'p2sh' | 'p2wpkh', numInputs: number = 1, numOutputs: number = 2): { size: number; vSize: number } {
+    const inputSizes = {
+      p2pkh: 148,    // Legacy P2PKH
+      p2sh: 91,      // P2SH-P2WPKH (witness discount)
+      p2wpkh: 68     // Native SegWit P2WPKH
+    };
+    
+    const outputSize = 34; // P2PKH output
+    const overhead = 10;   // Version, locktime, etc.
+    
+    const inputSize = inputSizes[addressType];
+    const totalSize = overhead + (numInputs * inputSize) + (numOutputs * outputSize);
+    
+    // Para SegWit, o vSize é menor devido ao witness discount
+    let vSize = totalSize;
+    if (addressType === 'p2wpkh') {
+      // Native SegWit: witness data conta como 1/4
+      const witnessSize = 107; // signature + pubkey
+      vSize = overhead + (numInputs * 41) + (numOutputs * outputSize) + (numInputs * witnessSize / 4);
+    } else if (addressType === 'p2sh') {
+      // P2SH-P2WPKH: witness discount parcial
+      vSize = overhead + (numInputs * 64) + (numOutputs * outputSize);
+    }
+    
+    return { size: totalSize, vSize: Math.ceil(vSize) };
+  }
+
+  // Validar taxa customizada com contexto avançado
+  validateCustomFeeRate(rate: number, context?: FeeValidationContext): FeeValidationResult {
+    // Validações básicas
+    const basicValidation = this.validateBasicFeeRate(rate);
+    if (!basicValidation.isValid) {
+      return basicValidation;
+    }
+
+    // Validações contextuais se contexto fornecido
+    if (context) {
+      const contextualValidation = this.validateContextualFeeRate(rate, context);
+      if (!contextualValidation.isValid) {
+        return contextualValidation;
+      }
+    }
+
+    return { isValid: true, severity: 'info' };
+  }
+
+  // Validação básica de taxa
+  private validateBasicFeeRate(rate: number): FeeValidationResult {
+    const minRate = 1; // 1 sat/byte mínimo absoluto
+    const maxRate = 200; // 200 sat/byte máximo (proteção contra erros)
+    
+    if (rate < minRate) {
+      return {
+        isValid: false,
+        message: `Taxa muito baixa. Mínimo: ${minRate} sat/byte`,
+        severity: 'error',
+        suggestedRate: minRate
+      };
+    }
+    
+    if (rate > maxRate) {
+      return {
+        isValid: false,
+        message: `Taxa muito alta. Máximo: ${maxRate} sat/byte`,
+        severity: 'error',
+        suggestedRate: maxRate
+      };
+    }
+
+    // Avisos para taxas extremas
+    if (rate < 2) {
+      return {
+        isValid: true,
+        warning: 'Taxa muito baixa pode resultar em confirmação muito lenta (6+ horas)',
+        severity: 'warning',
+        suggestedRate: 5
+      };
+    }
+
+    if (rate > 50) {
+      return {
+        isValid: true,
+        warning: 'Taxa muito alta. Considere usar uma taxa menor para economizar',
+        severity: 'warning'
+      };
+    }
+    
+    return { isValid: true, severity: 'info' };
+  }
+
+  // Validação contextual baseada no valor e contexto da transação
+  private validateContextualFeeRate(rate: number, context: FeeValidationContext): FeeValidationResult {
+    const { amount, txSize = 250, txVSize, addressType = 'p2wpkh', networkFees, urgency = 'medium' } = context;
+    
+    // Usar vSize se disponível, senão calcular baseado no tipo de endereço
+    const effectiveSize = txVSize || this.getEstimatedTransactionSize(addressType).vSize;
+    
+    // Calcular taxa total estimada usando vSize
+    const estimatedFee = rate * effectiveSize;
+    const feePercentage = (estimatedFee / amount) * 100;
+    
+    // Validação: Taxa não pode ser maior que 50% do valor
+    if (feePercentage > 50) {
+      return {
+        isValid: false,
+        message: `Taxa muito alta (${feePercentage.toFixed(1)}% do valor). Máximo: 50%`,
+        severity: 'error',
+        suggestedRate: Math.floor((amount * 0.3) / txSize) // 30% do valor
+      };
+    }
+
+    // Validação: Taxa não pode ser maior que 20% para valores pequenos
+    if (amount < 10000 && feePercentage > 20) { // < 0.0001 BTC
+      return {
+        isValid: false,
+        message: `Taxa muito alta para valor pequeno (${feePercentage.toFixed(1)}%). Máximo: 20%`,
+        severity: 'error',
+        suggestedRate: Math.floor((amount * 0.15) / txSize) // 15% do valor
+      };
+    }
+
+    // Validação: Taxa mínima baseada na rede
+    if (networkFees) {
+      const minNetworkRate = Math.min(networkFees.economy_fee, networkFees.hour_fee);
+      if (rate < minNetworkRate) {
+        return {
+          isValid: false,
+          message: `Taxa abaixo do mínimo da rede (${minNetworkRate} sat/byte). Pode não ser confirmada.`,
+          severity: 'error',
+          suggestedRate: minNetworkRate
+        };
+      }
+    }
+
+    // Avisos baseados no contexto
+    const warnings: string[] = [];
+    
+    // Aviso para taxas muito baixas em valores altos
+    if (amount > 1000000 && rate < 5) { // > 0.01 BTC
+      warnings.push('Para valores altos, considere usar taxa mais alta para segurança');
+    }
+
+    // Aviso para taxas muito altas em valores baixos
+    if (amount < 10000 && rate > 10) { // < 0.0001 BTC
+      warnings.push('Taxa alta para valor pequeno. Considere usar taxa econômica');
+    }
+
+    // Aviso para urgência alta com taxa baixa
+    if (urgency === 'high' && rate < 10) {
+      warnings.push('Para confirmação rápida, use taxa mais alta (10+ sat/byte)');
+    }
+
+    // Aviso para taxa muito baixa que pode travar
+    if (rate < 3 && amount > 100000) { // > 0.001 BTC
+      warnings.push('Taxa muito baixa pode resultar em transação não confirmada');
+    }
+
+    if (warnings.length > 0) {
+      return {
+        isValid: true,
+        warning: warnings.join('. '),
+        severity: 'warning'
+      };
+    }
+
+    return { isValid: true, severity: 'info' };
+  }
+
+  // Obter sugestão inteligente de taxa baseada no valor
+  getSmartFeeSuggestion(amount: number, networkFees?: { economy_fee: number; hour_fee: number; fastest_fee: number }): string {
+    const amountInBTC = amount / 100000000;
+    
+    if (amountInBTC >= 0.1) {
+      return 'Para valores altos, recomendamos taxa rápida para segurança';
+    } else if (amountInBTC >= 0.01) {
+      return 'Taxa padrão é adequada para este valor';
+    } else {
+      return 'Taxa econômica é suficiente para valores pequenos';
+    }
+  }
+
+  // Validar se a taxa pode resultar em transação não confirmada
+  validateFeeForConfirmation(rate: number, networkFees?: { economy_fee: number; hour_fee: number; fastest_fee: number }): FeeValidationResult {
+    if (!networkFees) {
+      return {
+        isValid: true,
+        warning: 'Não foi possível verificar taxas da rede',
+        severity: 'warning'
+      };
+    }
+
+    // Taxa muito baixa comparada com a rede
+    if (rate < networkFees.economy_fee * 0.5) {
+      return {
+        isValid: false,
+        message: `Taxa muito baixa (${rate} vs ${networkFees.economy_fee} da rede). Pode não ser confirmada.`,
+        severity: 'error',
+        suggestedRate: networkFees.economy_fee
+      };
+    }
+
+    // Taxa baixa mas ainda aceitável
+    if (rate < networkFees.economy_fee) {
+      return {
+        isValid: true,
+        warning: `Taxa baixa (${rate} vs ${networkFees.economy_fee} da rede). Confirmação pode ser lenta.`,
+        severity: 'warning',
+        suggestedRate: networkFees.economy_fee
+      };
+    }
+
+    return { isValid: true, severity: 'info' };
+  }
+
+  // Calcular taxa mínima segura baseada no valor
+  calculateMinimumSafeFee(amount: number, txSize: number = 250): number {
+    // Taxa mínima: 1% do valor ou 1 sat/byte, o que for maior
+    const minFeePercentage = amount * 0.01; // 1% do valor
+    const minFeePerByte = Math.ceil(minFeePercentage / txSize);
+    
+    return Math.max(minFeePerByte, 1); // Mínimo 1 sat/byte
+  }
+
+  // Detectar taxas suspeitas (possíveis erros de digitação)
+  detectSuspiciousFee(rate: number, context: FeeValidationContext): FeeValidationResult {
+    const { amount, txSize = 250 } = context;
+    const estimatedFee = rate * txSize;
+    
+    // Taxa que é maior que o valor da transação
+    if (estimatedFee > amount) {
+      return {
+        isValid: false,
+        message: `Taxa (${estimatedFee} sats) é maior que o valor da transação (${amount} sats)`,
+        severity: 'error',
+        suggestedRate: Math.floor(amount * 0.1 / txSize) // 10% do valor
+      };
+    }
+
+    // Taxa que é 90% ou mais do valor
+    if (estimatedFee >= amount * 0.9) {
+      return {
+        isValid: false,
+        message: `Taxa muito alta (${(estimatedFee/amount*100).toFixed(1)}% do valor). Verifique se está correto.`,
+        severity: 'error',
+        suggestedRate: Math.floor(amount * 0.1 / txSize) // 10% do valor
+      };
+    }
+
+    // Taxa muito redonda (possível erro de digitação)
+    if (rate >= 10 && rate % 10 === 0 && rate > 50) {
+      return {
+        isValid: true,
+        warning: `Taxa muito alta (${rate} sat/byte). Verifique se não é um erro de digitação.`,
+        severity: 'warning'
+      };
+    }
+
+    return { isValid: true, severity: 'info' };
+  }
+
+  // Validar taxa completa com todas as verificações
+  validateFeeComprehensive(rate: number, context: FeeValidationContext): FeeValidationResult {
+    // 1. Validação básica
+    const basicValidation = this.validateCustomFeeRate(rate, context);
+    if (!basicValidation.isValid) {
+      return basicValidation;
+    }
+
+    // 2. Validação de confirmação
+    const confirmationValidation = this.validateFeeForConfirmation(rate, context.networkFees);
+    if (!confirmationValidation.isValid) {
+      return confirmationValidation;
+    }
+
+    // 3. Detecção de taxas suspeitas
+    const suspiciousValidation = this.detectSuspiciousFee(rate, context);
+    if (!suspiciousValidation.isValid) {
+      return suspiciousValidation;
+    }
+
+    // 4. Combinar avisos se houver
+    const warnings: string[] = [];
+    if (basicValidation.warning) warnings.push(basicValidation.warning);
+    if (confirmationValidation.warning) warnings.push(confirmationValidation.warning);
+    if (suspiciousValidation.warning) warnings.push(suspiciousValidation.warning);
+
+    if (warnings.length > 0) {
+      return {
+        isValid: true,
+        warning: warnings.join('. '),
+        severity: 'warning'
+      };
+    }
+
+    return { isValid: true, severity: 'info' };
   }
 
   async sendTransaction(fromAddress: string, toAddress: string, amount: number, feeRate: number): Promise<string> {
