@@ -27,6 +27,7 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
   const [wallet, setWallet] = useState<BitcoinWallet | null>(null);
   const [loading, setLoading] = useState(true);
   const deviceInfo = useDeviceInfo();
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     loadWallet();
@@ -69,7 +70,8 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
     const address = getCurrentAddress();
     if (address) {
       await Clipboard.setString(address);
-      Alert.alert('Sucesso', 'Endereço copiado para a área de transferência');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     }
   };
 
@@ -179,8 +181,12 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
           <Text style={styles.sectionTitle}>Endereço Atual</Text>
           <View style={styles.addressContainer}>
             <Text style={styles.addressText}>{getCurrentAddress()}</Text>
-            <TouchableOpacity style={styles.copyButton} onPress={copyAddress}>
-              <Ionicons name="copy-outline" size={20} color={colors.primary.main} />
+            <TouchableOpacity style={styles.copyButton} onPress={copyAddress} disabled={copied}>
+              {copied ? (
+                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              ) : (
+                <Ionicons name="copy-outline" size={20} color={colors.primary.main} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -188,11 +194,6 @@ export const ReceiveBitcoinScreen: React.FC<ReceiveBitcoinScreenProps> = ({ navi
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={copyAddress}>
-            <Ionicons name="copy-outline" size={24} color={colors.text.onPrimary} />
-            <Text style={styles.actionButtonText}>Copiar Endereço</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.actionButton} onPress={shareAddress}>
             <Ionicons name="share-outline" size={24} color={colors.text.onPrimary} />
             <Text style={styles.actionButtonText}>Compartilhar</Text>

@@ -2,7 +2,7 @@
   "expo": {
     "name": "luma-mobile",
     "slug": "luma-mobile",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.anonymous.luma-mobile",

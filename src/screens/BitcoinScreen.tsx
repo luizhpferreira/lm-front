@@ -142,7 +142,7 @@ export const BitcoinScreen: React.FC<BitcoinScreenProps> = ({ navigation }) => {
                 onPress={handleDeleteWallet}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.secondaryOptionText, { color: 'white' }]}>🗑️ Deletar Carteira</Text>
+                <Text style={[styles.secondaryOptionText, { color: 'white' }]}>Deletar Carteira</Text>
               </TouchableOpacity>
             </>
           ) : (

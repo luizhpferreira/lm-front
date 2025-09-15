@@ -8,11 +8,14 @@ import {
   Alert,
   RefreshControl,
   SafeAreaView,
+  Modal,
+  Linking,
 } from 'react-native';
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
 import { Ionicons } from '@expo/vector-icons';
 import { useDeviceInfo } from '../hooks/useDeviceInfo';
+import * as Clipboard from 'expo-clipboard';
 
 interface WalletHomeScreenProps {
   navigation: any;
@@ -28,6 +31,10 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
   const [balanceUnit, setBalanceUnit] = useState<'sats' | 'BTC'>('sats');
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
+  const [txDetails, setTxDetails] = useState<{ fromAddress?: string; toAddress?: string } | null>(null);
+  const [loadingTxDetails, setLoadingTxDetails] = useState(false);
   const deviceInfo = useDeviceInfo();
 
   useEffect(() => {
@@ -153,6 +160,61 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
     }
   };
 
+  useEffect(() => {
+    const fetchTxDetails = async () => {
+      if (!selectedTx) {
+        setTxDetails(null);
+        return;
+      }
+      try {
+        setLoadingTxDetails(true);
+        const resp = await fetch(`https://mempool.space/api/tx/${selectedTx.txid}`);
+        if (!resp.ok) throw new Error('Falha ao carregar detalhes da transação');
+        const data = await resp.json();
+
+        const firstInput = data.vin?.[0];
+        const firstOutput = data.vout?.[0];
+
+        const walletAddress = wallet?.addresses?.bech32 || wallet?.addresses?.p2pkh || wallet?.addresses?.p2sh;
+
+        let fromAddress: string | undefined = firstInput?.prevout?.scriptpubkey_address;
+        let toAddress: string | undefined = firstOutput?.scriptpubkey_address;
+
+        // Melhor tentativa para identificar destino quando foi "sent": pegar o primeiro vout que não é da carteira
+        if (selectedTx.type === 'sent' && Array.isArray(data.vout)) {
+          const out = data.vout.find((o: any) => o.scriptpubkey_address && o.scriptpubkey_address !== walletAddress);
+          if (out?.scriptpubkey_address) toAddress = out.scriptpubkey_address;
+          fromAddress = walletAddress;
+        }
+
+        // Quando foi "received": destino é a carteira
+        if (selectedTx.type === 'received') {
+          toAddress = walletAddress;
+        }
+
+        setTxDetails({ fromAddress, toAddress });
+      } catch (e) {
+        setTxDetails(null);
+      } finally {
+        setLoadingTxDetails(false);
+      }
+    };
+
+    fetchTxDetails();
+  }, [selectedTx]);
+
+  const handleCopy = async (text: string) => {
+    try {
+      await Clipboard.setStringAsync(text);
+      Alert.alert('Copiado', 'Conteúdo copiado para a área de transferência');
+    } catch (e) {}
+  };
+
+  const openInMempool = (txid: string) => {
+    const url = `https://mempool.space/tx/${txid}`;
+    Linking.openURL(url);
+  };
+
 
   const toggleBalanceUnit = () => {
     setBalanceUnit(prev => prev === 'sats' ? 'BTC' : 'sats');
@@ -245,7 +307,6 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={dynamicStyles.title}>Carteira Bitcoin</Text>
-          <Text style={dynamicStyles.subtitle}>Modo Soberano</Text>
         </View>
       </View>
 
@@ -284,8 +345,8 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
             </View>
           ) : transactions.length > 0 ? (
             <View style={styles.transactionsList}>
-              {transactions.slice(0, 3).map((tx) => (
-                <View key={tx.id} style={styles.transactionItem}>
+              {(showAllTransactions ? transactions : transactions.slice(0, 3)).map((tx) => (
+                <TouchableOpacity key={tx.id} style={styles.transactionItem} onPress={() => setSelectedTx(tx)}>
                   <View style={styles.transactionIcon}>
                     <Text style={styles.transactionIconText}>
                       {tx.type === 'received' ? '↓' : '↑'}
@@ -293,7 +354,11 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
                   </View>
                   <View style={styles.transactionDetails}>
                     <Text style={styles.transactionType}>
-                      {tx.type === 'received' ? 'Recebido' : 'Enviado'}
+                      {(tx.confirmations ?? 0) === 0
+                        ? 'Pendente'
+                        : tx.type === 'received'
+                        ? 'Recebido'
+                        : 'Enviado'}
                     </Text>
                     <Text style={styles.transactionTime}>
                       {formatTransactionTime(tx.timestamp)}
@@ -310,11 +375,16 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
                       {tx.confirmations} confirmações
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
               {transactions.length > 3 && (
-                <TouchableOpacity style={styles.viewAllButton}>
-                  <Text style={styles.viewAllText}>Ver todas as transações</Text>
+                <TouchableOpacity
+                  style={styles.viewAllButton}
+                  onPress={() => setShowAllTransactions(prev => !prev)}
+                >
+                  <Text style={styles.viewAllText}>
+                    {showAllTransactions ? 'Ver menos' : 'Ver todas as transações'}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -344,6 +414,68 @@ export const WalletHomeScreen: React.FC<WalletHomeScreenProps> = ({ navigation, 
 
 
       </ScrollView>
+
+      {/* Modal de detalhes da transação */}
+      <Modal
+        visible={!!selectedTx}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedTx(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Detalhes da Transação</Text>
+
+            {loadingTxDetails ? (
+              <Text style={styles.modalLoading}>Carregando...</Text>
+            ) : (
+              <View style={styles.modalBody}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>De</Text>
+                  <View style={styles.detailValueContainer}>
+                    <Text style={styles.detailValue} numberOfLines={1}>
+                      {txDetails?.fromAddress || 'Desconhecido'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Para</Text>
+                  <View style={styles.detailValueContainer}>
+                    <Text style={styles.detailValue} numberOfLines={1}>
+                      {txDetails?.toAddress || 'Desconhecido'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>TXID</Text>
+                  <View style={styles.detailValueContainer}>
+                    <Text style={styles.detailValue} numberOfLines={1}>
+                      {selectedTx?.txid}
+                    </Text>
+                    {selectedTx?.txid ? (
+                      <TouchableOpacity onPress={() => handleCopy(selectedTx.txid)} style={styles.copyBtn}>
+                        <Text style={styles.copyBtnText}>Copiar</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.mempoolButton} onPress={() => selectedTx && openInMempool(selectedTx.txid)}>
+                  <Text style={styles.mempoolButtonText}>Ver na mempool</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCloseButton} onPress={() => setSelectedTx(null)}>
+                <Text style={styles.modalCloseText}>Fechar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -425,6 +557,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: spacing.xl,
     marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
     marginBottom: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
@@ -583,5 +716,97 @@ const styles = StyleSheet.create({
   noTransactionsText: {
     fontSize: 14,
     color: colors.text.secondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 480,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+  },
+  modalLoading: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  modalBody: {
+    gap: spacing.md,
+  },
+  detailRow: {
+    gap: spacing.xs,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+  detailValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text.primary,
+    backgroundColor: colors.background.primary,
+    padding: spacing.sm,
+    borderRadius: 8,
+  },
+  copyBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  copyBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  mempoolButton: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.primary.main,
+    paddingVertical: spacing.md,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  mempoolButtonText: {
+    color: colors.text.onPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalActions: {
+    marginTop: spacing.lg,
+    alignItems: 'center',
+  },
+  modalCloseButton: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  modalCloseText: {
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
