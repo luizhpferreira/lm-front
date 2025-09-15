@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
   SafeAreaView,
+  Linking,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
@@ -171,11 +172,31 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
           <View style={styles.placeholder} />
         </View>
         <View style={styles.centerContent}>
-          <Text style={styles.errorText}>❌ Acesso à câmera negado</Text>
+          <Text style={styles.errorText}>Acesso à câmera negado</Text>
           <Text style={styles.errorDescription}>
             Para usar o scanner de QR code, você precisa permitir o acesso à câmera.
           </Text>
-          <TouchableOpacity style={styles.manualButton} onPress={requestPermission}>
+          <TouchableOpacity 
+            style={styles.manualButton} 
+            onPress={async () => {
+              try {
+                const result = await requestPermission();
+                if (!result.granted) {
+                  Alert.alert(
+                    'Permissão Negada',
+                    'Para usar o scanner de QR code, você precisa permitir o acesso à câmera nas configurações do dispositivo.',
+                    [
+                      { text: 'OK' },
+                      { text: 'Configurações', onPress: () => Linking.openSettings() }
+                    ]
+                  );
+                }
+              } catch (error) {
+                console.error('Erro ao solicitar permissão:', error);
+                Alert.alert('Erro', 'Não foi possível solicitar permissão da câmera.');
+              }
+            }}
+          >
             <Text style={styles.manualButtonText}>Conceder permissão</Text>
           </TouchableOpacity>
         </View>
