@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { colors, spacing } from '../theme';
 import { bitcoinService } from '../services/bitcoinService';
+import { multiWalletService } from '../services/multiWalletService';
 import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface CreateWalletScreenProps {
@@ -26,28 +27,62 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
   const handleGenerateWallet = async () => {
     try {
       setIsGenerating(true);
+      
+      // Verificar se o serviço está disponível
+      if (!bitcoinService.instance) {
+        throw new Error('Serviço Bitcoin não está disponível');
+      }
+      
       const newWallet = await bitcoinService.instance.generateWallet();
       setWallet(newWallet);
       setShowMnemonic(true);
     } catch (error) {
       console.error('Erro ao gerar carteira:', error);
-      Alert.alert('Erro', 'Falha ao gerar carteira. Tente novamente.');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      Alert.alert(
+        'Erro ao Gerar Carteira', 
+        `Não foi possível gerar a carteira: ${errorMessage}\n\nTente novamente ou reinicie o aplicativo.`
+      );
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleConfirmMnemonic = () => {
-    Alert.alert(
-      'Carteira Criada!',
-      'Sua carteira Bitcoin foi criada com sucesso. Guarde seu mnemônico em local seguro.',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('WalletHome', { wallet }),
-        },
-      ]
-    );
+  const handleConfirmMnemonic = async () => {
+    try {
+      if (!wallet) {
+        Alert.alert('Erro', 'Carteira não encontrada');
+        return;
+      }
+
+      // Salvar nova carteira no sistema de múltiplas carteiras
+      const walletInfo = {
+        id: multiWalletService.generateWalletId(),
+        name: `Carteira ${new Date().toLocaleDateString()}`,
+        address: wallet.addresses?.bech32 || wallet.addresses?.p2pkh || 'N/A',
+        balance: 0,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        mnemonic: wallet.mnemonic || ''
+      };
+
+      await multiWalletService.addWallet(walletInfo);
+      console.log('✅ Nova carteira salva:', walletInfo);
+
+      Alert.alert(
+        'Carteira Criada!',
+        'Sua nova carteira Bitcoin foi criada com sucesso. Guarde seu mnemônico em local seguro.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Bitcoin'),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Erro ao salvar nova carteira:', error);
+      Alert.alert('Erro', 'Não foi possível salvar a nova carteira.');
+    }
   };
 
   const handleBackupLater = () => {
@@ -61,7 +96,7 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
         },
         {
           text: 'Depois',
-          onPress: () => navigation.navigate('WalletHome', { wallet }),
+          onPress: handleConfirmMnemonic, // Salvar carteira mesmo sem backup
           style: 'cancel',
         },
       ]
@@ -130,7 +165,7 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
             onPress={handleBackupLater}
             activeOpacity={0.8}
           >
-            <Text style={styles.secondaryButtonText}>Continuar</Text>
+            <Text style={styles.secondaryButtonText}>Depois</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -138,7 +173,7 @@ export const CreateWalletScreen: React.FC<CreateWalletScreenProps> = ({ navigati
             onPress={handleConfirmMnemonic}
             activeOpacity={0.8}
           >
-            <Text style={styles.primaryButtonText}>Entendi, Continuar</Text>
+            <Text style={styles.primaryButtonText}>Continuar</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
