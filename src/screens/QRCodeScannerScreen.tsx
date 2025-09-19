@@ -20,7 +20,7 @@ import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import { useDeviceInfo } from '../hooks/useDeviceInfo';
-import { bitcoinService } from '../services/bitcoinService';
+// Removido import do bitcoinService
 
 const { width, height } = Dimensions.get('window');
 const SCREEN_WIDTH = width;
@@ -40,49 +40,15 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
   const [showManualModal, setShowManualModal] = useState(false);
   const deviceInfo = useDeviceInfo();
 
-  const mode: 'bitcoin' | 'lightning' = route?.params?.mode
-    || (route?.params?.onScan ? 'bitcoin' : 'lightning');
+  // Sempre Lightning para este projeto
+  const mode: 'lightning' = 'lightning';
 
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
 
     const text = (data || '').trim();
 
-    if (mode === 'bitcoin') {
-      try {
-        let address = text;
-        if (text.toLowerCase().startsWith('bitcoin:')) {
-          const withoutScheme = text.slice('bitcoin:'.length);
-          const [addr] = withoutScheme.split('?');
-          address = addr;
-        }
-
-        if (bitcoinService.instance.validateAddress(address)) {
-          const onScan = route?.params?.onScan;
-          if (typeof onScan === 'function') {
-            onScan(address);
-          }
-          navigation.goBack();
-        } else {
-          Alert.alert(
-            'QR Code inválido',
-            'Este QR code não contém um endereço Bitcoin válido.',
-            [
-              { text: 'OK', onPress: () => setScanned(false) }
-            ]
-          );
-        }
-      } catch (e) {
-        Alert.alert(
-          'Erro ao ler QR',
-          'Não foi possível processar este QR code.',
-          [
-            { text: 'OK', onPress: () => setScanned(false) }
-          ]
-        );
-      }
-      return;
-    }
+    // Apenas Lightning neste projeto
 
     // Lightning
     if (text.startsWith('lnbc')) {
@@ -164,7 +130,13 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
     setPaymentRequest('');
     setShowManualModal(false);
     setScanned(false);
-    navigation.goBack();
+    // Verificar se há tela anterior antes de voltar
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      // Se não há tela anterior, navegar para Login (sempre disponível)
+      navigation.navigate('Login');
+    }
   };
 
   const resetScanner = () => {
@@ -250,10 +222,16 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
   return (
     <SafeAreaView style={styles.container}>
       <View style={dynamicStyles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            navigation.navigate('Login');
+          }
+        }}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={dynamicStyles.headerTitle}>Escanear</Text>
+        <Text style={dynamicStyles.headerTitle}>Escanear Lightning</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -278,15 +256,13 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
 
       <View style={styles.controlsContainer}>
         <Text style={styles.instructionText}>
-          {mode === 'bitcoin'
-            ? 'Escaneie um QR code Bitcoin'
-            : 'Escaneie um QR code de invoice Lightning para pagar automaticamente'}
+          Escaneie um QR code de invoice Lightning para pagar automaticamente
         </Text>
       </View>
 
       {/* Modal para inserção manual ou confirmação */}
       <Modal
-        visible={showManualModal && mode === 'lightning'}
+        visible={showManualModal}
         transparent={true}
         animationType="fade"
         onRequestClose={handleCancel}

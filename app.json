@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "luma-mobile",
-    "slug": "luma-mobile",
+    "name": "luma-lightning",
+    "slug": "luma-lightning",
     "version": "1.0.4",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.anonymous.luma-mobile",
+      "bundleIdentifier": "com.anonymous.luma-lightning",
       "infoPlist": {
         "NSCameraUsageDescription": "Este app precisa de acesso à câmera para escanear QR codes de pagamento Lightning Network."
       }
     },
     "android": {
-      "package": "com.anonymous.lumamobile",
+      "package": "com.anonymous.lumalightning",
       "permissions": [
         "CAMERA"
       ]

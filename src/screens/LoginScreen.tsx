@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { colors, spacing, typography } from '../theme';
-import { Button, Input, Card, BackButton } from '../components';
+import { Button, Input, Card } from '../components';
 import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface LoginScreenProps {
@@ -73,7 +73,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header com botão de voltar no topo */}
       <View style={dynamicStyles.topHeader}>
-        <BackButton onPress={() => navigation.goBack()} />
       </View>
 
       <KeyboardAvoidingView

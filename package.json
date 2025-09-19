@@ -1,5 +1,5 @@
 {
-  "name": "luma-mobile",
+  "name": "luma-lightning",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
@@ -12,20 +12,11 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
-    "@noble/hashes": "^2.0.0",
-    "@noble/secp256k1": "^2.0.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.4.6",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.7",
-    "@scure/bip32": "^2.0.0",
-    "@scure/bip39": "^2.0.0",
     "axios": "^1.11.0",
-    "bech32": "^2.0.0",
-    "bip32": "^2.0.4",
-    "bip39": "^3.1.0",
-    "bitcoinjs-lib": "^6.1.7",
-    "buffer": "^6.0.3",
     "crypto-js": "^4.2.0",
     "expo": "~53.0.22",
     "expo-camera": "^16.1.11",

@@ -13,7 +13,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { colors, spacing, typography } from '../theme';
-import { BackButton } from '../components';
+// Removido BackButton - não há mais para onde voltar
 
 interface RegisterScreenProps {
   navigation: any;
@@ -198,7 +198,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <BackButton onPress={() => navigation.goBack()} />
           
           <Text style={styles.title}>Criar Conta</Text>
         </View>
