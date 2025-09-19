@@ -1,12 +1,13 @@
 {
-  "name": "luma-mobile",
+  "name": "luma-lightning",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -16,29 +17,42 @@
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/stack": "^7.4.7",
     "axios": "^1.11.0",
+    "crypto-js": "^4.2.0",
+    "expo": "~53.0.22",
     "expo-camera": "^16.1.11",
     "expo-clipboard": "~7.1.5",
+    "expo-crypto": "^14.1.5",
     "expo-dev-client": "~5.2.4",
     "expo-font": "~13.3.2",
     "expo-status-bar": "~2.2.3",
     "expo-system-ui": "~5.0.11",
+    "process": "^0.11.10",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
+    "react-native-crypto": "^2.2.1",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-get-random-values": "^1.11.0",
     "react-native-qrcode-svg": "^6.3.15",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
+    "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.20.0",
-    "expo": "~53.0.22"
+    "readable-stream": "^4.7.0",
+    "text-encoding": "^0.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@react-native-community/cli": "^20.0.1",
     "@types/react": "~19.0.10",
+    "@types/text-encoding": "^0.0.40",
+    "babel-plugin-module-resolver": "^5.0.2",
     "expo": "^53.0.22",
+    "js-sha256": "^0.11.1",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0",
     "typescript": "~5.8.3"
   },
   "private": true

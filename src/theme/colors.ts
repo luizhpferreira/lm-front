@@ -76,6 +76,7 @@ export const colors = {
     tertiary: '#b2bec3',
     disabled: '#dfe6e9',
     inverse: '#ffffff',
+    onPrimary: '#ffffff',
   },
   
   // Cores de borda - Suaves e modernas

@@ -408,18 +408,19 @@ const styles = StyleSheet.create({
   },
   modalButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     width: '100%',
     marginBottom: spacing.md,
+    gap: spacing.md,
   },
   modalButton: {
-    borderRadius: 25, // Formato de cápsula
-    paddingVertical: 10, // Padding reduzido para iPhone
-    paddingHorizontal: 16, // Padding reduzido para iPhone
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     alignItems: 'center',
+    justifyContent: 'center',
     flex: 1,
-    marginHorizontal: spacing.sm,
-    minHeight: 42, // Botões um pouco menores para iPhone
+    minHeight: 48,
     shadowColor: colors.shadow.medium,
     shadowOffset: {
       width: 0,
@@ -439,6 +440,7 @@ const styles = StyleSheet.create({
     color: colors.text.inverse,
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
   },
   cancelButton: {
     backgroundColor: colors.background.tertiary,

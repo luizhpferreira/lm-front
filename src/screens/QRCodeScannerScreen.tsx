@@ -9,6 +9,8 @@ import {
   TextInput,
   ActivityIndicator,
   Dimensions,
+  SafeAreaView,
+  Linking,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +19,8 @@ import { apiService } from '../services/api';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
+// Removido import do bitcoinService
 
 const { width, height } = Dimensions.get('window');
 const SCREEN_WIDTH = width;
@@ -24,30 +28,38 @@ const SCREEN_HEIGHT = height;
 
 interface QRCodeScannerScreenProps {
   navigation: any;
+  route: any;
 }
 
-export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ navigation }) => {
+export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ navigation, route }) => {
   const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState('');
   const [loading, setLoading] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
+  const deviceInfo = useDeviceInfo();
+
+  // Sempre Lightning para este projeto
+  const mode: 'lightning' = 'lightning';
 
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
-    
-    // Verifica se é um payment request Lightning válido
-    if (data.startsWith('lnbc')) {
-      setPaymentRequest(data);
+
+    const text = (data || '').trim();
+
+    // Apenas Lightning neste projeto
+
+    // Lightning
+    if (text.startsWith('lnbc')) {
+      setPaymentRequest(text);
       setShowManualModal(true);
     } else {
       Alert.alert(
         'QR Code Inválido',
         'Este QR code não é um payment request Lightning válido.\n\nFormato esperado: lnbc1...',
         [
-          { text: 'OK', onPress: () => setScanned(false) },
-          { text: 'Inserir Manualmente', onPress: () => setShowManualModal(true) }
+          { text: 'OK', onPress: () => setScanned(false) }
         ]
       );
     }
@@ -113,15 +125,18 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
     }
   };
 
-  const handleManualInput = () => {
-    setShowManualModal(true);
-  };
 
   const handleCancel = () => {
     setPaymentRequest('');
     setShowManualModal(false);
     setScanned(false);
-    navigation.goBack();
+    // Verificar se há tela anterior antes de voltar
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      // Se não há tela anterior, navegar para Login (sempre disponível)
+      navigation.navigate('Login');
+    }
   };
 
   const resetScanner = () => {
@@ -131,60 +146,92 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
 
 
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    headerTitle: {
+      ...styles.headerTitle,
+      fontSize: deviceInfo.isSmallScreen ? 16 : 18,
+    },
+  });
+
   if (!permission) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={styles.container}>
+        <View style={dynamicStyles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Scanner QR Code</Text>
+          <Text style={dynamicStyles.headerTitle}>Scanner QR Code</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Carregando permissões...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={styles.container}>
+        <View style={dynamicStyles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Scanner QR Code</Text>
+          <Text style={dynamicStyles.headerTitle}>Scanner QR Code</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.centerContent}>
-          <Text style={styles.errorText}>❌ Acesso à câmera negado</Text>
+          <Text style={styles.errorText}>Acesso à câmera negado</Text>
           <Text style={styles.errorDescription}>
             Para usar o scanner de QR code, você precisa permitir o acesso à câmera.
           </Text>
-          <TouchableOpacity style={styles.manualButton} onPress={requestPermission}>
+          <TouchableOpacity 
+            style={styles.manualButton} 
+            onPress={async () => {
+              try {
+                const result = await requestPermission();
+                if (!result.granted) {
+                  Alert.alert(
+                    'Permissão Negada',
+                    'Para usar o scanner de QR code, você precisa permitir o acesso à câmera nas configurações do dispositivo.',
+                    [
+                      { text: 'OK' },
+                      { text: 'Configurações', onPress: () => Linking.openSettings() }
+                    ]
+                  );
+                }
+              } catch (error) {
+                console.error('Erro ao solicitar permissão:', error);
+                Alert.alert('Erro', 'Não foi possível solicitar permissão da câmera.');
+              }
+            }}
+          >
             <Text style={styles.manualButtonText}>Conceder permissão</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.manualButton} onPress={handleManualInput}>
-            <Text style={styles.manualButtonText}>📝 Inserir Payment Request Manualmente</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backButtonStyle} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonTextStyle}>← Voltar</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+    <SafeAreaView style={styles.container}>
+      <View style={dynamicStyles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            navigation.navigate('Login');
+          }
+        }}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Escanear</Text>
+        <Text style={dynamicStyles.headerTitle}>Escanear Lightning</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -211,14 +258,6 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
         <Text style={styles.instructionText}>
           Escaneie um QR code de invoice Lightning para pagar automaticamente
         </Text>
-        
-        <View style={styles.controlButtons}>
-          {scanned && (
-            <TouchableOpacity style={styles.scanAgainButton} onPress={resetScanner}>
-              <Text style={styles.scanAgainButtonText}>🔄 Escanear Novamente</Text>
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
 
       {/* Modal para inserção manual ou confirmação */}
@@ -273,7 +312,7 @@ export const QRCodeScannerScreen: React.FC<QRCodeScannerScreenProps> = ({ naviga
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

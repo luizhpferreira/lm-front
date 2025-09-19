@@ -13,7 +13,7 @@ import { EmailConfirmationScreen } from '../screens/EmailConfirmationScreen';
 import { PayInvoiceScreen } from '../screens/PayInvoiceScreen';
 import { CreateInvoiceScreen } from '../screens/CreateInvoiceScreen';
 import { QRCodeScannerScreen } from '../screens/QRCodeScannerScreen';
-import { BitcoinScreen } from '../screens/BitcoinScreen';
+// Removidos imports específicos do Bitcoin
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
 const Stack = createStackNavigator();
@@ -74,12 +74,12 @@ export const AppNavigator = () => {
         ) : (
           // Rotas não autenticadas
           <>
-            <Stack.Screen name="Bitcoin" component={BitcoinScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
             <Stack.Screen name="EmailConfirmation" component={EmailConfirmationScreen} />
+            <Stack.Screen name="QRCodeScanner" component={QRCodeScannerScreen} />
           </>
         )}
       </Stack.Navigator>

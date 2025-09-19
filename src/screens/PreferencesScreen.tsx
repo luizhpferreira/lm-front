@@ -6,11 +6,13 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService, WalletData } from '../services/api';
 import { colors, spacing, typography } from '../theme';
 import { ResponsiveContainer, ResponsiveCard } from '../components';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface PreferencesScreenProps {
   navigation: any;
@@ -20,6 +22,7 @@ export const PreferencesScreen: React.FC<PreferencesScreenProps> = ({ navigation
   const { user, logout } = useAuth();
   const [walletInfo, setWalletInfo] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(false);
+  const deviceInfo = useDeviceInfo();
 
   useEffect(() => {
     loadWalletInfo();
@@ -71,16 +74,28 @@ export const PreferencesScreen: React.FC<PreferencesScreenProps> = ({ navigation
     );
   };
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    headerTitle: {
+      ...styles.headerTitle,
+      fontSize: deviceInfo.isSmallScreen ? 18 : 20,
+    },
+  });
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container}>
+      <View style={dynamicStyles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Preferências</Text>
+        <Text style={dynamicStyles.headerTitle}>Preferências</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -150,7 +165,7 @@ export const PreferencesScreen: React.FC<PreferencesScreenProps> = ({ navigation
           </ResponsiveCard>
         </ScrollView>
       </ResponsiveContainer>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -163,7 +178,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.screenPadding,
+    paddingHorizontal: spacing.screenPadding,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
     backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,

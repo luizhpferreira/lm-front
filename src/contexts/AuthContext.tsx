@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, cpf: string, password: string, passwordRepeat: string) => {
     try {
-      console.log('DEBUG: AuthContext register called with:', { email, cpf, password, passwordRepeat });
+      console.log('DEBUG: AuthContext register called with:', { email, cpf, passwordLength: password?.length, passwordRepeatLength: passwordRepeat?.length });
       
       // Remove formatação do CPF (pontos e hífens)
       const cleanCpf = cpf.replace(/\D/g, '');

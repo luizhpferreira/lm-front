@@ -93,8 +93,8 @@ class ApiService {
   private api: AxiosInstance;
   private baseURL: string = 'https://luma.app.br'; 
   //private baseURL: string = 'http://10.0.2.2:8080'; // URL local para emulador Android
-  //private baseURL: string = 'http://localhost:8080'; // URL local para iOS
-  //private baseURL: string = 'http://192.168.0.12:8080'; // URL local para iOS (IP da máquina)
+  //private baseURL: string = 'http://localhost:8081'; // URL local para iOS - Backend Bitcoin
+  //private baseURL: string = 'http://192.168.0.12:8081'; // URL local para iOS (IP da máquina) - Backend Bitcoin
 
   constructor() {
     console.log('DEBUG: ApiService constructor - baseURL:', this.baseURL);
@@ -161,7 +161,7 @@ class ApiService {
   // Login
   async login(data: LoginRequest): Promise<ApiResponse<LoginData>> {
     try {
-      console.log('DEBUG: ApiService login called with:', data);
+      console.log('DEBUG: ApiService login called with email:', data.email);
       const response: AxiosResponse<ApiResponse<LoginData>> = await this.api.post('/api/v1/login', data);
       
       if (response.data.success && response.data.data?.token) {

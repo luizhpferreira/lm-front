@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1286074150967401814FD64F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2001073CCC256C067BFC655D /* PrivacyInfo.xcprivacy */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		25D0C34EB2151B9F79E53A09 /* libPods-lumamobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CA7379F4447ED31B4D21B217 /* libPods-lumamobile.a */; };
+		2A29EC6194B8DEC1EC8C32B2 /* libPods-lumamobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 02B5B946460C83B67B307488 /* libPods-lumamobile.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		8FC80E7B1A6DD04CA6B3AB63 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25A8FAA1225A10018A2F269 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		D9F01CF81A57B5C37F99CB92 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 03D9C45366698152540E8D94 /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		F81AFA08AB4E3DB8942B69F9 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8854182661176306FC1DA53F /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		02B5B946460C83B67B307488 /* libPods-lumamobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-lumamobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		03D9C45366698152540E8D94 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = lumamobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* lumamobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = lumamobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = lumamobile/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = lumamobile/Info.plist; sourceTree = "<group>"; };
-		1DE467313AA60C48FDB6B76D /* Pods-lumamobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lumamobile.release.xcconfig"; path = "Target Support Files/Pods-lumamobile/Pods-lumamobile.release.xcconfig"; sourceTree = "<group>"; };
-		2001073CCC256C067BFC655D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = lumamobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		641F3D808EE0FB8E12A1DD29 /* Pods-lumamobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lumamobile.debug.xcconfig"; path = "Target Support Files/Pods-lumamobile/Pods-lumamobile.debug.xcconfig"; sourceTree = "<group>"; };
-		8854182661176306FC1DA53F /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-lumamobile/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		984DD60AD0F4D1A3F2CC96A7 /* Pods-lumamobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lumamobile.release.xcconfig"; path = "Target Support Files/Pods-lumamobile/Pods-lumamobile.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = lumamobile/SplashScreen.storyboard; sourceTree = "<group>"; };
+		AB5B66C1FEFD91968947B917 /* Pods-lumamobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lumamobile.debug.xcconfig"; path = "Target Support Files/Pods-lumamobile/Pods-lumamobile.debug.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		CA7379F4447ED31B4D21B217 /* libPods-lumamobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-lumamobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E25A8FAA1225A10018A2F269 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-lumamobile/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = lumamobile/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* lumamobile-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "lumamobile-Bridging-Header.h"; path = "lumamobile/lumamobile-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,31 +37,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				25D0C34EB2151B9F79E53A09 /* libPods-lumamobile.a in Frameworks */,
+				2A29EC6194B8DEC1EC8C32B2 /* libPods-lumamobile.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0B48A08C13055BA9AEA7C9ED /* lumamobile */ = {
-			isa = PBXGroup;
-			children = (
-				8854182661176306FC1DA53F /* ExpoModulesProvider.swift */,
-			);
-			name = lumamobile;
-			sourceTree = "<group>";
-		};
-		0E041AF84F0FA48683FC82CA /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				641F3D808EE0FB8E12A1DD29 /* Pods-lumamobile.debug.xcconfig */,
-				1DE467313AA60C48FDB6B76D /* Pods-lumamobile.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* lumamobile */ = {
 			isa = PBXGroup;
 			children = (
@@ -71,24 +53,16 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				2001073CCC256C067BFC655D /* PrivacyInfo.xcprivacy */,
+				03D9C45366698152540E8D94 /* PrivacyInfo.xcprivacy */,
 			);
 			name = lumamobile;
-			sourceTree = "<group>";
-		};
-		168DB6DE636D967D3FEA3C96 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				0B48A08C13055BA9AEA7C9ED /* lumamobile */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				CA7379F4447ED31B4D21B217 /* libPods-lumamobile.a */,
+				02B5B946460C83B67B307488 /* libPods-lumamobile.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -107,8 +81,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				0E041AF84F0FA48683FC82CA /* Pods */,
-				168DB6DE636D967D3FEA3C96 /* ExpoModulesProviders */,
+				89FB68BD9BC23377001A1047 /* Pods */,
+				CB36B6E487E20D552760895B /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -123,6 +97,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		89FB68BD9BC23377001A1047 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				AB5B66C1FEFD91968947B917 /* Pods-lumamobile.debug.xcconfig */,
+				984DD60AD0F4D1A3F2CC96A7 /* Pods-lumamobile.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -130,6 +113,22 @@
 			);
 			name = Supporting;
 			path = lumamobile/Supporting;
+			sourceTree = "<group>";
+		};
+		CB36B6E487E20D552760895B /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				EEB3F1629F7DE31BBD8473C4 /* lumamobile */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		EEB3F1629F7DE31BBD8473C4 /* lumamobile */ = {
+			isa = PBXGroup;
+			children = (
+				E25A8FAA1225A10018A2F269 /* ExpoModulesProvider.swift */,
+			);
+			name = lumamobile;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,13 +139,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "lumamobile" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				1AAE979FDB1BAB972E725341 /* [Expo] Configure project */,
+				DA0BB1261CAAD635A323E8B1 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				AFA89D66EE1ED1E104A11DBF /* [CP] Embed Pods Frameworks */,
+				D16355BFB56732254C6AABD5 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -196,7 +195,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				1286074150967401814FD64F /* PrivacyInfo.xcprivacy in Resources */,
+				D9F01CF81A57B5C37F99CB92 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,25 +238,6 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		1AAE979FDB1BAB972E725341 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-lumamobile/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -339,7 +319,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lumamobile/Pods-lumamobile-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		AFA89D66EE1ED1E104A11DBF /* [CP] Embed Pods Frameworks */ = {
+		D16355BFB56732254C6AABD5 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -357,6 +337,25 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lumamobile/Pods-lumamobile-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		DA0BB1261CAAD635A323E8B1 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-lumamobile/expo-configure-project.sh\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -365,7 +364,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				F81AFA08AB4E3DB8942B69F9 /* ExpoModulesProvider.swift in Sources */,
+				8FC80E7B1A6DD04CA6B3AB63 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -374,12 +373,13 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 641F3D808EE0FB8E12A1DD29 /* Pods-lumamobile.debug.xcconfig */;
+			baseConfigurationReference = AB5B66C1FEFD91968947B917 /* Pods-lumamobile.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = lumamobile/lumamobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 76544T4GU4;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -410,12 +410,13 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1DE467313AA60C48FDB6B76D /* Pods-lumamobile.release.xcconfig */;
+			baseConfigurationReference = 984DD60AD0F4D1A3F2CC96A7 /* Pods-lumamobile.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = lumamobile/lumamobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 76544T4GU4;
 				INFOPLIST_FILE = lumamobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

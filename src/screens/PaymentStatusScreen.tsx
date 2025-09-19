@@ -7,9 +7,11 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { apiService } from '../services/api';
 import { colors, spacing } from '../theme';
+import { useDeviceInfo } from '../hooks/useDeviceInfo';
 
 interface PaymentStatusScreenProps {
   navigation: any;
@@ -19,6 +21,7 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
   const [paymentHash, setPaymentHash] = useState('');
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<any>(null);
+  const deviceInfo = useDeviceInfo();
 
   const handleCheckPayment = async () => {
     if (!paymentHash.trim()) {
@@ -38,9 +41,21 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
     }
   };
 
+  // Estilos dinâmicos baseados no dispositivo
+  const dynamicStyles = StyleSheet.create({
+    header: {
+      ...styles.header,
+      paddingVertical: deviceInfo.isSmallScreen ? 12 : 16,
+    },
+    cardTitle: {
+      ...styles.cardTitle,
+      fontSize: deviceInfo.isSmallScreen ? 18 : 20,
+    },
+  });
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container}>
+      <View style={dynamicStyles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -54,7 +69,7 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
       <ScrollView style={styles.content}>
         <View style={styles.card}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Hash do Pagamento</Text>
+            <Text style={dynamicStyles.cardTitle}>Hash do Pagamento</Text>
             <TextInput
               style={styles.input}
               value={paymentHash}
@@ -123,7 +138,7 @@ export const PaymentStatusScreen: React.FC<PaymentStatusScreenProps> = ({ naviga
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
